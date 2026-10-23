@@ -55,7 +55,12 @@ class CommandCenterTest {
 
     @Test fun typedBatteryCommandReturnsPlatformReading() {
         rule.onNodeWithText("Enter a local command").performTextInput("battery")
-        rule.onNodeWithContentDescription("Send command").performClick()
+        // IME submission avoids a coordinate tap racing the system keyboard's resize animation.
+        // Other tests exercise the GO touch target; this also verifies the keyboard's Send action.
+        rule.onNodeWithText("Enter a local command").performImeAction()
+        rule.waitUntil(timeoutMillis = 5000) {
+            rule.onAllNodesWithText("Battery level is", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
         rule.onNodeWithText("Battery level is", substring = true).assertExists()
     }
 
