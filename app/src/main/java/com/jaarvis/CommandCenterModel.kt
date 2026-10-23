@@ -38,7 +38,7 @@ class CommandCenterModel(application: Application) : AndroidViewModel(applicatio
     private val actions: DeviceActions = AndroidDeviceActions(application, AndroidReminderScheduler(application))
     private val input: SpeechInput = AndroidSpeechInput(application)
     var ttsReady by mutableStateOf(false); private set
-    private val output: SpeechOutput = AndroidSpeechOutput(application) { ttsReady = it }
+    private val output = AndroidSpeechOutput(application) { ttsReady = it }
     private var operation: Job? = null
     private var generation = 0L
     var state by mutableStateOf(ReactorState.IDLE); private set
