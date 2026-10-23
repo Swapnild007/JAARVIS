@@ -267,7 +267,7 @@ private fun SystemPreferences(model: CommandCenterModel) {
     if (model.aiConfigured) Action("Remove API key") { model.clearAiKey() }
     var modelEntry by remember(model.aiModel) { mutableStateOf(model.aiModel) }
     OutlinedTextField(value = modelEntry, onValueChange = { modelEntry = it.take(100) }, label = { Text("Gemini model") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-    Action("Save model", enabled = modelEntry.isNotBlank()) { model.setAiModel(modelEntry) }
+    Action("Save model", enabled = modelEntry.isNotBlank()) { model.updateAiModel(modelEntry) }
     Info("JAARVIS voice", "Select and preview an installed offline Android voice. A lower pitch does not guarantee a masculine timbre. Additional voice models may be required.")
     val voices = model.availableVoices
     if (voices.isEmpty()) Text("No installed offline TTS voices found. Check Android speech settings.", color = Muted)
