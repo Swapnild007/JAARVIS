@@ -98,7 +98,7 @@ class CommandCenterModel(application: Application) : AndroidViewModel(applicatio
                 activePlan = "Ask Gemini for a conversational response"; event(ReactorEvent.Plan)
                 status = "Contacting Gemini…"; event(ReactorEvent.Execute)
                 val conversation = history.asReversed().filter { it.plan == "Ask Gemini for a conversational response" && it.success }
-                    .takeLast(4).flatMap { listOf("user" to it.input, "model" to it.response) }
+                    .takeLast(4).flatMap { listOf("user" to it.command, "model" to it.response) }
                 val answer = try { aiProvider.reply(text, aiModel, key, conversation) }
                     catch (cancelled: CancellationException) { throw cancelled }
                     catch (error: Exception) { status = error.message ?: "AI request failed."; event(ReactorEvent.Fail); return@launch }
