@@ -22,7 +22,7 @@ class CommandCenterModel(application: Application) : AndroidViewModel(applicatio
     var aiModel by mutableStateOf(aiSettings.model); private set
     fun saveAiKey(value: String): Boolean = try { aiSettings.saveKey(value); aiConfigured = true; true } catch (_: Exception) { status = "Secure key storage failed."; false }
     fun clearAiKey() { aiSettings.clear(); aiConfigured = false }
-    fun setAiModel(value: String) { if (value.matches(Regex("[a-zA-Z0-9._-]{1,100}"))) { aiSettings.model = value; aiModel = value } }
+    fun updateAiModel(value: String) { if (value.matches(Regex("[a-zA-Z0-9._-]{1,100}"))) { aiSettings.model = value; aiModel = value } }
     val availableVoices get() = output.voices
     val selectedVoice get() = output.selectedVoice
     val voiceRate get() = output.voiceRate
