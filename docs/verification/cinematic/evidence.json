@@ -1,0 +1,24 @@
+{
+  "source": "162ce9b9fdd4b4ebed7498fa3673cacb9ba7ea89",
+  "run": 39930967655,
+  "baselineRun": 39921509671,
+  "screenshots": {
+    "ci-screenshots/default/fixture-listening.png": "ff906f0f8610be0cc36048692b4705e3d6ead452f5f2c1450c331fb55fdb7306",
+    "ci-screenshots/default/system.png": "16d6be153712a832f449d55c7f57ec2893498d8e38852a700ec9d06cfe24dd62",
+    "ci-screenshots/default/research.png": "857ed51e006032a046bf1ac8977a226525c4cdc93b1bc9ea06856f257c235d5e",
+    "ci-screenshots/default/home.png": "5f49a4b1d4d819368afd63431a05d07a0d70a321c0f57db042e29741dca3c5bf",
+    "ci-screenshots/default/finance.png": "9dc92a3ce4319cfabc7d6085e934927550a1ed477c6aa3a54ffabc8091b4c4e7",
+    "ci-screenshots/default/engineering.png": "c42b1cb4ea7408b78036690f415520eb911555f834ccd5f43c99384880d618c8",
+    "ci-screenshots/default/fixture-executing.png": "763c48f86dd03218da592e617da814bac19aa7ad5efe1b0775205ea522c7805a",
+    "ci-screenshots/default/memory.png": "7d1636fb939f32f746eaf08b940aa1f1fb0ceabf71b91ad33d12cc54cb402fbf",
+    "ci-screenshots/default/fixture-speaking.png": "92813c0e7f0505e657eb09171a5ddf8575bc48e0847c21b887b6ee458bf521cc",
+    "ci-screenshots/default/fixture-thinking.png": "702083d070bd7e8c07a58a2a9c7039c60f5d3e60666a8582f6d0327f88a5af0c",
+    "ci-screenshots/default/automations.png": "b023b08199e2465158b7d3870d580227cf14d6a98b2ec781fc6b4bebbc4b3414",
+    "ci-screenshots/default/fixture-planning.png": "41274eccce127250cc50176a68b89307f5b48636e9dcbf93c31169686fb58506",
+    "ci-screenshots/default/intelligence.png": "27e6f8fc2b81a89e310e374b71e5344537e9e18530802bd5371f46957e1ec638",
+    "ci-screenshots/default/operations.png": "00a8115656db31781dd76c282dfd24347441fade942bf635e6b2efa6be8a956f",
+    "ci-screenshots/default/fixture-completed.png": "477b5a5ebc3b6fdcf826f3618d00ac8f0843729bebd489a03e8c2213392c5f72",
+    "ci-screenshots/default/fixture-idle.png": "7dde9209e3d75a17c9fc5767fcbde14468e8f46ff2a685555c4ca36e09102e82",
+    "ci-screenshots/default/fixture-error.png": "da5854a5a18e18cbfd73815a3920ff6e440a462623a693d3690fd17216e0501e"
+  }
+}

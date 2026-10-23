@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jaarvis.core.CommandsTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-23T09:20:59" hostname="d42b8e035fb3" time="0.049">
+  <properties/>
+  <testcase name="arbitraryProseCannotDispatchDeviceActions" classname="com.jaarvis.core.CommandsTest" time="0.02"/>
+  <testcase name="navigationTreatsDestinationAsData" classname="com.jaarvis.core.CommandsTest" time="0.002"/>
+  <testcase name="routesAllCoreCommands" classname="com.jaarvis.core.CommandsTest" time="0.004"/>
+  <testcase name="everyCommandHasOneExplicitPlanAndOutcomeIsHonest" classname="com.jaarvis.core.CommandsTest" time="0.009"/>
+  <testcase name="rejectsInvalidOrAmbiguousAlarm" classname="com.jaarvis.core.CommandsTest" time="0.001"/>
+  <testcase name="resetInvalidatesLateEvents" classname="com.jaarvis.core.CommandsTest" time="0.008"/>
+  <testcase name="boundsTimersAndConvertsUnitsWithoutOverflow" classname="com.jaarvis.core.CommandsTest" time="0.001"/>
+  <testcase name="stateTracksActualOperationLifecycle" classname="com.jaarvis.core.CommandsTest" time="0.0"/>
+  <testcase name="parsesAlarmWithNoonMidnightAnd24HourTime" classname="com.jaarvis.core.CommandsTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

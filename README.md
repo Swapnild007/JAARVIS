@@ -1,6 +1,8 @@
-# JAARVIS · The Command Center
+# JAARVIS · Cinematic Android Command Center
 
-A native Android, local-first command center inspired by the supplied JARVIS video. Kotlin, Jetpack Compose and Canvas; no web runtime, backend, account or paid API key.
+Revision 03 substantially replaces the old command-center composition. See [root cause, visual changes and safe installation](docs/CINEMATIC_UI.md).
+
+The debug app is named **JAARVIS Cinematic** and installs as `com.jaarvis.commandcenter.cinematic` alongside the earlier JAARVIS app. Preserve the old installation and its data; no uninstall is required. A matching original signing key is required for any true in-place update.
 
 ## Run
 
@@ -9,7 +11,7 @@ Requirements: Java 17, Android SDK platform 35 / build-tools 35.0.0, Android 8.0
 ```sh
 ./gradlew assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n com.jaarvis.commandcenter/com.jaarvis.MainActivity
+adb shell am start -n com.jaarvis.commandcenter.cinematic/com.jaarvis.MainActivity
 ```
 
 On Android: download the `jaarvis-debug-and-reports` artifact from a successful **Android verification** workflow run in [Actions](https://github.com/Swapnild007/JAARVIS/actions). Unzip it, open `app-debug.apk`, and grant your browser/files app permission to install this APK when Android asks. This is a debug build, not a signed production release. CI artifact availability depends on the workflow actually completing successfully.
@@ -62,4 +64,4 @@ See [reference investigation](docs/REFERENCE.md), [verification evidence](docs/V
 
 See [Recovery](docs/RECOVERY.md), [Architecture](docs/ARCHITECTURE.md), and [current verification](docs/VERIFICATION.md). Archived reports do not validate the current release.
 
-If Android reports a signing conflict with the earlier review APK, save any needed notes first. The earlier debug signing key was not recoverable; uninstalling that build clears its local data. CI debug keys may also differ between builds. Production signing and upgrade continuity require a securely retained release key in a later release.
+Install this revision alongside the old app as **JAARVIS Cinematic**. Do not uninstall the old JAARVIS app to resolve a certificate conflict. See the signing and migration limits in [Cinematic UI](docs/CINEMATIC_UI.md).

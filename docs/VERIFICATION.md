@@ -1,61 +1,44 @@
-# Release 1 verification · 23 October 2026
+# Cinematic revision 03 verification · 23 October 2026
 
-Verdict: buildable review candidate; physical-device acceptance remains open. Current application code is commit `bf1afb0c64f98ec03ba07d694e3355adb161e498` on `codex/release-1-command-center`, in draft PR #1. Documentation/evidence changes do not add application functionality.
+Application source: `162ce9b9fdd4b4ebed7498fa3673cacb9ba7ea89` on `codex/release-1-command-center`, [draft PR #1](https://github.com/Swapnild007/JAARVIS/pull/1). Documentation/evidence commits do not change this application source. See [root cause and design comparison](CINEMATIC_UI.md).
 
-## Local execution
+## Build and automated checks
 
-Java 17, Gradle 8.9, AGP 8.7.3, Kotlin 2.0.21, Android SDK 35 and explicitly pinned build-tools 35.0.0. SDK/dependencies were restored after recovering the review archive. No local physical phone or KVM device is available.
-
-Executed:
+Java 17, Gradle 8.9, AGP 8.7.3, Kotlin 2.0.21, Android SDK 35 / build-tools 35.0.0; minSdk 26. No dependency versions changed for the cinematic revision.
 
 ```sh
-gradle --no-daemon assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
+./gradlew -Pkotlin.compiler.execution.strategy=in-process --no-daemon clean assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
 ```
 
-The Gradle 8.9 distribution is the same version and checksum as the committed wrapper. The current environment needed its managed network proxy to download dependencies; no proxy or environment-specific trust settings were added to the repository.
+Local clean build passed in 43 seconds, 77 tasks executed. An incremental build first encountered stale duplicate generated instrumentation R-class dex entries; a clean rebuild regenerated the outputs and passed. The final local build used the already downloaded dependency cache in offline mode. No proxy or trust-store settings were added to the repository.
 
-| Check | Result |
-| --- | --- |
-| Final APK and instrumentation APK compilation | Passed; 76 tasks, 15 executed, 61 up to date, 54 seconds |
-| Unit tests | 9 passed; zero failures, errors or skips |
-| Lint | Zero errors; two GradleDependency notices for newer lifecycle libraries |
-| APK signature | `apksigner verify` passed; standard debug certificate |
-| Manifest permissions | RECORD_AUDIO, SET_ALARM and AndroidX-generated signature receiver permission; no INTERNET/AccessibilityService/background mic |
-| Source secret-pattern check | No matching API-key/private-key patterns in app or workflow source; not an exhaustive secret audit |
-| Whitespace validation | `git diff --check` passed |
-| Runtime dependency report | Saved in verification/dependencies.txt; inventory, not a vulnerability-scan verdict |
+Local unit tests: **9 passed**, zero failures/errors/skips. Final clean local lint: **zero findings**; earlier metadata-aware incremental lint reported three dependency-version update notices. These are not security findings or an exhaustive dependency audit.
 
-The first complete build passed with no lint findings; a later metadata-aware run reported two dependency-update notices. They are preserved in `verification/lint.txt`. This is not a claim of an exhaustive dependency/security audit. A transient Kotlin compiler-daemon startup retry recovered and the build completed successfully.
+Passed CI run: [39930967655](https://github.com/Swapnild007/JAARVIS/actions/runs/39930967655). Both jobs passed. API 35 Pixel 6, 1080×2400 portrait: **15 tests passed** (8 UI, 4 native-boundary, 3 reactor rendering). A second run at 720×1280, density 320 and 150% text passed **all 8 UI tests**. Zero failures/skips. The portrait overlap assertion passed. All eight module destination captures were retrieved; home, enlarged-text, module and state fixtures were inspected.
 
-Unit coverage: allowlisted app routes; bounded alarm/timer parsing and overflow handling; rejection of arbitrary prose; Maps destination handling; all eight reactor states and late-event rejection; explicit one-step plan/outcome semantics.
+CI lint completed with **zero errors and 6 warnings**: one OldTargetApi (SDK 35) and five GradleDependency update notices. The online CI report is authoritative for metadata-dependent checks; local offline lint had no findings. The unchanged toolchain remains pinned for this visual milestone; latest-SDK/dependency migration needs its own compatibility testing. See `verification/cinematic/ci-lint.html`.
 
-## GitHub Actions and emulator
+- [APK, unit and lint artifact](https://github.com/Swapnild007/JAARVIS/actions/runs/39930967655/artifacts/12491697381)
+- [Original PNG screenshots and emulator reports](https://github.com/Swapnild007/JAARVIS/actions/runs/39930967655/artifacts/12490984894)
+- [Before/after image](verification/cinematic/before-after.jpg), same emulator viewport; baseline run 39921509671.
+- [Current portrait home](verification/cinematic/default/home.jpg) and [150% text home](verification/cinematic/large-text/home.jpg). Enlarged text intentionally scrolls the main content while retaining the command dock. These committed JPEGs are resized review copies; full PNGs and all eight state fixtures are in the artifact.
 
-Draft PR: https://github.com/Swapnild007/JAARVIS/pull/1
-Current code run: https://github.com/Swapnild007/JAARVIS/actions/runs/39918527214
+Delivered APK SHA-256: `2ae0be1793771a0e761e1bc8364a29a993ff0c39ba6eee242d665c1ea4c8e6dd`. `apksigner verify` passed; certificate SHA-256 `4f338b341095000c3c046a4d9c80047080fc866821dde7714810f7a7517fe4d8`. CI build and emulator jobs independently build the same source; the downloadable APK comes from the build job. Manifest inspection confirms the Cinematic package/label and only RECORD_AUDIO, SET_ALARM and the AndroidX-generated signature receiver permission. No INTERNET, AccessibilityService or background-microphone permission was added.
 
-The first CI setup failed because setup-android requested the removed `tools` package. Fixed by naming the actual platform/build-tools packages.
+## Regression coverage
 
-An earlier API 35 x86_64 emulator run executed eight UI tests: seven passed and one exposed a real defect (the note keyboard hid the module Back control). Fixed by retaining the header on module screens while the keyboard is visible. Its original failure report was inspected; it is not counted as a passing run.
+Existing parser, state-machine, typed commands, error/reset, cancellation, persistence/recreation, note/preferences, all eight module routes and native intent boundary tests remain. No changes were made to core commands, Android adapters or CommandCenterModel.
 
-The build job passed. All 12 emulator tests passed (eight UI tests and four native-boundary tests), with zero failures/skips. The overall job still failed during screenshot collection because Gradle uninstalled the app after testing, removing its external files. The CI command now retains test APKs after the run, following the AndroidX project's own Gradle setting. A new run must verify collection; screenshot inspection remains pending until those images are actually retrieved.
+Three rendering tests cover all eight reactor states and subsystem callbacks, pixel changes with orbital animation, and stable pixels with reduced motion. State fixtures directly set renderer inputs: they do **not** demonstrate real recognition, TTS audio or task execution. The default-portrait UI test also checks every subsystem touch target is at least 48dp high and fully above the fixed command dock.
 
-Actual HTML runtime reports from the 12-test run are preserved under verification/emulator/. They establish API 35 emulator behavior for the current app code, not physical phone or audio behavior. Documentation-only commits are excluded from re-running identical application tests.
+## Evidence scope
 
-## Artifact identity
+Emulator evidence is distinct from physical-phone acceptance. Android recognition/TTS services were unavailable on the emulator; their unavailable states are visible and honest. Real microphone recognition, spoken interruption, OEM app behavior, saved Clock alarms/timers, TalkBack and physical frame/battery profiling still require the [device checklist](DEVICE_ACCEPTANCE.md).
 
-Delivered local debug APK: version `0.2.0-r1`, versionCode 2, package `com.jaarvis.commandcenter`, minSdk 26, targetSdk 35.
+No continuous wake word, background microphone, new AI provider, remote execution or reminder service was added. No overall intelligence completion, merge or public deployment is claimed.
 
-SHA-256: `33ed7900291fb33c5f2b1924f52dafd41152f03916cc2f7fc65d8c94b217795e`.
+Previous basic-UI evidence is archived under `verification/pre-cinematic/` and `verification/archive/`; it does not validate revision 03. Actual emulator screenshots are captures of the installed Compose application, not generated mockups. CI disables OS animations for ordinary UI tests; the dedicated Canvas motion test explicitly advances its own Compose animation clock.
 
-The old review APK and current APK use different debug signing certificates. The original private key was absent from the archive. Android may require uninstalling the old build; save notes first because uninstall clears local data. CI-generated debug APKs can also use a different certificate. No production signing key or credentials are committed.
+## Safe install
 
-## Remaining acceptance gates
-
-Not verified on physical hardware: actual recognition/TTS audio and interruption; OS microphone-denial dialog; offline recognition/language availability; OEM app launches; saved Clock alarm/timer delivery; TalkBack; large font and orientation; frame timing and background power. See DEVICE_ACCEPTANCE.md.
-
-The emulator's simulated voice-denial recovery test exercises the application's error path, not an actual operating-system permission dialog. Intent tests validate visible-review flags, URI encoding and honest unavailable-app results using a recording Context, not actual third-party app behavior.
-
-General AI, API providers, autonomous tool orchestration, durable approved personal memory, wake word, background voice, incoming-call-style reminders, owned notification scheduling and remote engineering remain later releases. No overall project completion, merge or public deployment is claimed.
-
-Original recovered reports remain under `verification/archive/` and do not verify this version.
+Debug package `com.jaarvis.commandcenter.cinematic`, label **JAARVIS Cinematic**, version `0.3.0-cinematic` / code 3. This deliberately installs alongside the old package, preserving that app and its data. **Do not uninstall or clear the old app.** The new package starts with separate storage. See [signing and migration limitations](CINEMATIC_UI.md#safe-installation-and-signing).
