@@ -143,8 +143,8 @@ private fun CommandDock(model: CommandCenterModel, listen: () -> Unit, imeVisibl
             if (model.state != ReactorState.IDLE) TextButton(onClick = model::cancel, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (model.state in setOf(ReactorState.COMPLETED, ReactorState.ERROR)) "RESET" else "STOP", fontSize = 10.sp) }
             TextButton(onClick = listen, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (model.state == ReactorState.LISTENING) "STOP MIC" else "VOICE", fontSize = 10.sp) }
         }
-        if (!imeVisible) Text(model.status, color = if (model.state == ReactorState.ERROR) MaterialTheme.colorScheme.error else Muted,
-            fontSize = 12.sp, lineHeight = 17.sp, maxLines = 4,
+        Text(model.status, color = if (model.state == ReactorState.ERROR) MaterialTheme.colorScheme.error else Muted,
+            fontSize = 12.sp, lineHeight = 17.sp, maxLines = if (imeVisible) 2 else 4,
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
