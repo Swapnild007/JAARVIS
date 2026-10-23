@@ -75,6 +75,18 @@ class AndroidSpeechInput(private val context: Context) : SpeechInput {
 }
 
 class AndroidSpeechOutput(context: Context, private val readiness: (Boolean) -> Unit = {}) : SpeechOutput {
+    private val profile = VoiceProfile(context)
+    val voices: List<String> get() = if (ready) engine?.voices?.filter { !it.isNetworkConnectionRequired }?.map { it.name }?.sorted() ?: emptyList() else emptyList()
+    fun selectVoice(name: String) { if (voices.contains(name)) { profile.voiceName = name; applyVoice() } }
+    fun updateVoice(rate: Float, pitch: Float) { profile.rate = rate; profile.pitch = pitch; applyVoice() }
+    val selectedVoice get() = profile.voiceName
+    val voiceRate get() = profile.rate
+    val voicePitch get() = profile.pitch
+    private fun applyVoice() {
+        engine?.setSpeechRate(profile.rate)
+        engine?.setPitch(profile.pitch)
+        engine?.voices?.firstOrNull { it.name == profile.voiceName && !it.isNetworkConnectionRequired }?.let { engine?.voice = it }
+    }
     private val handler = Handler(Looper.getMainLooper())
     private var engine: TextToSpeech? = null
     private var initialized = false
@@ -87,6 +99,7 @@ class AndroidSpeechOutput(context: Context, private val readiness: (Boolean) -> 
             if (initialized) {
                 val result = engine?.setLanguage(Locale.getDefault())
                 initialized = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED
+                if (initialized) applyVoice()
             }
             readiness(initialized)
         }
