@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jaarvis.core.CommandsTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-23T03:29:33" hostname="29175fcfa935" time="0.038">
+  <properties/>
+  <testcase name="routesAllCoreCommands" classname="com.jaarvis.core.CommandsTest" time="0.024"/>
+  <testcase name="rejectsInvalidOrAmbiguousAlarm" classname="com.jaarvis.core.CommandsTest" time="0.003"/>
+  <testcase name="stateTracksActualOperationLifecycle" classname="com.jaarvis.core.CommandsTest" time="0.008"/>
+  <testcase name="resetInvalidatesLateCompletion" classname="com.jaarvis.core.CommandsTest" time="0.0"/>
+  <testcase name="parsesAlarmWithNoonMidnightAnd24HourTime" classname="com.jaarvis.core.CommandsTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
