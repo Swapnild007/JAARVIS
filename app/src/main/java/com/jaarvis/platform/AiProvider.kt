@@ -52,11 +52,11 @@ class AiSettings(private val context: Context) {
     }
 }
 
-interface AiProvider { suspend fun reply(prompt: String, model: String, apiKey: String): String }
+interface AiProvider { suspend fun reply(prompt: String, model: String, apiKey: String, context: List<Pair<String, String>> = emptyList()): String }
 
 /** Gemini REST API; no third-party HTTP dependency, no key in URL or logs. */
 class GeminiProvider : AiProvider {
-    override suspend fun reply(prompt: String, model: String, apiKey: String): String = withContext(Dispatchers.IO) {
+    override suspend fun reply(prompt: String, model: String, apiKey: String, context: List<Pair<String, String>>): String = withContext(Dispatchers.IO) {
         require(model.matches(Regex("[a-zA-Z0-9._-]{1,100}"))) { "Invalid model name" }
         val url = URL("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent")
         val connection = url.openConnection() as HttpURLConnection
@@ -67,8 +67,14 @@ class GeminiProvider : AiProvider {
             connection.doOutput = true
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
             connection.setRequestProperty("x-goog-api-key", apiKey)
-            val request = JSONObject().put("contents", JSONArray().put(JSONObject().put("role", "user")
-                .put("parts", JSONArray().put(JSONObject().put("text", prompt.take(12000))))))
+            val contents = JSONArray()
+            context.takeLast(8).forEach { (role, message) ->
+                if (role == "user" || role == "model") contents.put(JSONObject().put("role", role)
+                    .put("parts", JSONArray().put(JSONObject().put("text", message.take(3000)))))
+            }
+            contents.put(JSONObject().put("role", "user")
+                .put("parts", JSONArray().put(JSONObject().put("text", prompt.take(12000)))))
+            val request = JSONObject().put("contents", contents)
             connection.outputStream.use { it.write(request.toString().toByteArray(Charsets.UTF_8)) }
             val code = connection.responseCode
             if (code !in 200..299) {
