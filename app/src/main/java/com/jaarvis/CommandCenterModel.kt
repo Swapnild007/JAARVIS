@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.jaarvis.core.*
 import com.jaarvis.platform.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -15,6 +16,22 @@ import kotlinx.coroutines.yield
 
 class CommandCenterModel(application: Application) : AndroidViewModel(application) {
     private val router = CommandRouter()
+    private val aiSettings = AiSettings(application)
+    private val aiProvider: AiProvider = GeminiProvider()
+    var aiConfigured by mutableStateOf(aiSettings.configured); private set
+    var aiModel by mutableStateOf(aiSettings.model); private set
+    fun saveAiKey(value: String): Boolean = try { aiSettings.saveKey(value); aiConfigured = true; true } catch (_: Exception) { status = "Secure key storage failed."; false }
+    fun clearAiKey() { aiSettings.clear(); aiConfigured = false }
+    fun setAiModel(value: String) { if (value.matches(Regex("[a-zA-Z0-9._-]{1,100}"))) { aiSettings.model = value; aiModel = value } }
+    val availableVoices get() = output.voices
+    val selectedVoice get() = output.selectedVoice
+    val voiceRate get() = output.voiceRate
+    val voicePitch get() = output.voicePitch
+    fun selectVoice(value: String) { output.selectVoice(value); voiceSelection = output.selectedVoice }
+    fun updateVoice(rate: Float, pitch: Float) { output.updateVoice(rate, pitch); voiceSettingsVersion++ }
+    var voiceSelection by mutableStateOf(""); private set
+    var voiceSettingsVersion by mutableIntStateOf(0); private set
+    fun previewVoice() { if (!output.speak("Good evening. JAARVIS systems are ready.", {}, {}, { status = "Voice preview failed." })) status = "Android TTS unavailable." }
     private val machine = ReactorMachine()
     private val store = PreferenceStore(application)
     private val historyStore = HistoryStore(application)
@@ -74,7 +91,30 @@ class CommandCenterModel(application: Application) : AndroidViewModel(applicatio
         operation = viewModelScope.launch {
             event(ReactorEvent.Recognized); status = "Interpreting the local command…"
             yield(); ensureActive()
-            val planned = plan(router.parse(text))
+            val command = router.parse(text)
+            if (command is Command.Unknown && aiConfigured) {
+                val key = aiSettings.readKey()
+                if (key == null) { status = "Saved AI key cannot be decrypted. Re-enter it in System settings."; event(ReactorEvent.Fail); return@launch }
+                activePlan = "Ask Gemini for a conversational response"; event(ReactorEvent.Plan)
+                status = "Contacting Gemini…"; event(ReactorEvent.Execute)
+                val answer = try { aiProvider.reply(text, aiModel, key) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (error: Exception) { status = error.message ?: "AI request failed."; event(ReactorEvent.Fail); return@launch }
+                if (token != generation) return@launch
+                status = answer
+                history.add(0, CommandRecord(text.take(500), answer.take(500), true, Outcome.VERIFIED, plan = activePlan, stages = listOf("THINKING", "PLANNING", "EXECUTING", "AI_RESPONSE")))
+                while (history.size > 30) history.removeAt(history.lastIndex)
+                historyStore.save(history.toList())
+                if (preferences.sound) {
+                    val accepted = output.speak(answer.take(3000),
+                        onStart = { if (token == generation) event(ReactorEvent.Speak) },
+                        onDone = { if (token == generation) event(ReactorEvent.Complete) },
+                        onError = { if (token == generation) { status = "AI response received; spoken feedback failed."; event(ReactorEvent.Fail) } })
+                    if (!accepted) event(ReactorEvent.Complete)
+                } else event(ReactorEvent.Complete)
+                return@launch
+            }
+            val planned = plan(command)
             activePlan = planned.description; event(ReactorEvent.Plan)
             status = planned.description
             yield(); ensureActive()
