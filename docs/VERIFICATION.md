@@ -1,45 +1,44 @@
-# Verification evidence · 23 October 2026
+# Cinematic revision 03 verification · 23 October 2026
 
-## Environment
+Application source: `162ce9b9fdd4b4ebed7498fa3673cacb9ba7ea89` on `codex/release-1-command-center`, [draft PR #1](https://github.com/Swapnild007/JAARVIS/pull/1). Documentation/evidence commits do not change this application source. See [root cause and design comparison](CINEMATIC_UI.md).
 
-Java 17, Gradle 8.9, AGP 8.7.3, Kotlin 2.0.21, Android SDK 35 / build-tools 35.0.0. No physical Android device and no `/dev/kvm` hardware acceleration. AOSP API 29 x86_64 software emulator was installed for an attempted runtime check. API 35 instrumentation is configured separately in CI.
+## Build and automated checks
 
-## Build and unit checks
+Java 17, Gradle 8.9, AGP 8.7.3, Kotlin 2.0.21, Android SDK 35 / build-tools 35.0.0; minSdk 26. No dependency versions changed for the cinematic revision.
 
 ```sh
-./gradlew --no-daemon assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
+./gradlew -Pkotlin.compiler.execution.strategy=in-process --no-daemon clean assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
 ```
 
-The first complete check found one lint error: an API 27 navigation-bar style attribute with minimum SDK 26. Removed the attribute; edge-to-edge system bar appearance is handled through Activity APIs. Added explicit backup/data-transfer exclusions for Android 12+ and disabled legacy backups.
+Local clean build passed in 43 seconds, 77 tasks executed. An incremental build first encountered stale duplicate generated instrumentation R-class dex entries; a clean rebuild regenerated the outputs and passed. The final local build used the already downloaded dependency cache in offline mode. No proxy or trust-store settings were added to the repository.
 
-Final local wrapper command completed successfully in 1m 58s: 76 tasks, 42 executed and 34 up to date. Five unit tests passed (zero failures/errors/skips). Final lint report: **No issues found**. The application and instrumentation APKs were generated. The reports persisted with the workspace and were read again after the session resumed.
+Local unit tests: **9 passed**, zero failures/errors/skips. Final clean local lint: **zero findings**; earlier metadata-aware incremental lint reported three dependency-version update notices. These are not security findings or an exhaustive dependency audit.
 
-The resumed execution environment had been reset: `/tmp` toolchains, logs and emulator processes no longer existed. The unfinished software-emulator run therefore provides no successful runtime evidence. CI is used for subsequent runtime verification and real app screenshots. Additional screenshot-capture instrumentation added after resumption must pass CI before being described as verified.
+Passed CI run: [39930967655](https://github.com/Swapnild007/JAARVIS/actions/runs/39930967655). Both jobs passed. API 35 Pixel 6, 1080×2400 portrait: **15 tests passed** (8 UI, 4 native-boundary, 3 reactor rendering). A second run at 720×1280, density 320 and 150% text passed **all 8 UI tests**. Zero failures/skips. The portrait overlap assertion passed. All eight module destination captures were retrieved; home, enlarged-text, module and state fixtures were inspected.
 
-Unit coverage: all six device-command routes; 24-hour and AM/PM alarms including noon/midnight; invalid times; arbitrary text not interpreted as actions; operation state transitions; cancel/reset and late-event rejection.
+CI lint completed with **zero errors and 6 warnings**: one OldTargetApi (SDK 35) and five GradleDependency update notices. The online CI report is authoritative for metadata-dependent checks; local offline lint had no findings. The unchanged toolchain remains pinned for this visual milestone; latest-SDK/dependency migration needs its own compatibility testing. See `verification/cinematic/ci-lint.html`.
 
-Debug APK: `app/build/outputs/apk/debug/app-debug.apk`. APK signature verification through `apksigner verify` passed. No private signing key is tracked; Android generated its normal local debug key outside this repository.
+- [APK, unit and lint artifact](https://github.com/Swapnild007/JAARVIS/actions/runs/39930967655/artifacts/12491697381)
+- [Original PNG screenshots and emulator reports](https://github.com/Swapnild007/JAARVIS/actions/runs/39930967655/artifacts/12490984894)
+- [Before/after image](verification/cinematic/before-after.jpg), same emulator viewport; baseline run 39921509671.
+- [Current portrait home](verification/cinematic/default/home.jpg) and [150% text home](verification/cinematic/large-text/home.jpg). Enlarged text intentionally scrolls the main content while retaining the command dock. These committed JPEGs are resized review copies; full PNGs and all eight state fixtures are in the artifact.
 
-## Runtime evidence
+Delivered APK SHA-256: `2ae0be1793771a0e761e1bc8364a29a993ff0c39ba6eee242d665c1ea4c8e6dd`. `apksigner verify` passed; certificate SHA-256 `4f338b341095000c3c046a4d9c80047080fc866821dde7714810f7a7517fe4d8`. CI build and emulator jobs independently build the same source; the downloadable APK comes from the build job. Manifest inspection confirms the Cinematic package/label and only RECORD_AUDIO, SET_ALARM and the AndroidX-generated signature receiver permission. No INTERNET, AccessibilityService or background-microphone permission was added.
 
-No successful runtime result was retained. Source-code existence is not runtime proof. The first SwiftShader software-rendering attempt booted and installed the app, but screenshot capture stalled after its PNG header and is not presented as a successful screenshot. A second software-only emulator attempt was interrupted by the environment reset before its result could be collected.
+## Regression coverage
 
-The instrumentation APK includes tests for all eight module controls and Back navigation, typed battery command, persistent-note controls, reduced-motion settings, and recoverable unknown commands. Compiling these tests does not establish that they passed at runtime.
+Existing parser, state-machine, typed commands, error/reset, cancellation, persistence/recreation, note/preferences, all eight module routes and native intent boundary tests remain. No changes were made to core commands, Android adapters or CommandCenterModel.
 
-## Physical-device release gates
+Three rendering tests cover all eight reactor states and subsystem callbacks, pixel changes with orbital animation, and stable pixels with reduced motion. State fixtures directly set renderer inputs: they do **not** demonstrate real recognition, TTS audio or task execution. The default-portrait UI test also checks every subsystem touch target is at least 48dp high and fully above the fixed command dock.
 
-Not verified on a real phone: microphone grant/deny with an installed recognizer; recognition and speech audio; TTS language/voice installation; YouTube launch when present; Clock app saved-alarm delivery; TalkBack; OEM keyboard; cutouts and gesture navigation; rotation and large font; frame-time and background power.
+## Evidence scope
 
-No call-like reminders, screen-off microphone, continuous wake word or two-way voice reminder are implemented. Clock handoff is not confirmation of a saved alarm.
+Emulator evidence is distinct from physical-phone acceptance. Android recognition/TTS services were unavailable on the emulator; their unavailable states are visible and honest. Real microphone recognition, spoken interruption, OEM app behavior, saved Clock alarms/timers, TalkBack and physical frame/battery profiling still require the [device checklist](DEVICE_ACCEPTANCE.md).
 
-## Repository and PR gate
+No continuous wake word, background microphone, new AI provider, remote execution or reminder service was added. No overall intelligence completion, merge or public deployment is claimed.
 
-Initial remote repository had no commits or branches. The local seed README commit is `5338939`. Automatic approval review rejected publishing that seed to main because direct default-branch initialization was not specifically authorized. No workaround is used. The requested feature branch holds all application work locally. Publishing that branch failed after resumption because the Git transport had no authentication (`could not read Username`). The connected GitHub API confirms that the remote still has no refs (409: Git Repository is empty). No feature branch or CI run has been published. A draft PR into main requires a real main ref and may remain blocked until initialization is approved. Do not merge or deploy.
+Previous basic-UI evidence is archived under `verification/pre-cinematic/` and `verification/archive/`; it does not validate revision 03. Actual emulator screenshots are captures of the installed Compose application, not generated mockups. CI disables OS animations for ordinary UI tests; the dedicated Canvas motion test explicitly advances its own Compose animation clock.
 
-## Delivery verdict
+## Safe install
 
-**Buildable review candidate; release acceptance incomplete.** The app builds, all five unit tests pass, lint is clean, and the debug APK was signature-verified. Rendering, animation, eight-module navigation, platform actions, permissions and actual speech/TTS have not been established by a completed runtime test. No screenshot is claimed. API 35 UI tests and real-phone checks remain required.
-
-The review ZIP contains the actual debug APK, source archive and the saved unit/lint reports. Its source includes the CI screenshot-capture test added after the last local compilation; that additional test remains uncompiled until CI or the Android toolchain is restored. The application Kotlin source in the APK is unchanged from the successful local wrapper build.
-
-To unblock GitHub delivery, approve creating `main` with the seed README only. Then the connected GitHub tools can publish the feature implementation and create the draft PR. This does not merge or deploy the application.
+Debug package `com.jaarvis.commandcenter.cinematic`, label **JAARVIS Cinematic**, version `0.3.0-cinematic` / code 3. This deliberately installs alongside the old package, preserving that app and its data. **Do not uninstall or clear the old app.** The new package starts with separate storage. See [signing and migration limitations](CINEMATIC_UI.md#safe-installation-and-signing).

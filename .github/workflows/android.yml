@@ -1,9 +1,13 @@
 name: Android verification
 on:
   pull_request:
-  push:
-    branches: [feat/jaarvis-command-center]
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
   workflow_dispatch:
+concurrency:
+  group: jaarvis-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -17,8 +21,12 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew --no-daemon assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
+      - run: chmod +x gradlew
+      - run: ./gradlew -Pkotlin.compiler.execution.strategy=in-process --no-daemon assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -37,6 +45,9 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
       - uses: gradle/actions/setup-gradle@v4
       - name: Enable KVM
         run: |
@@ -50,12 +61,22 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: |
-            ./gradlew connectedDebugAndroidTest
-            adb pull /sdcard/Android/data/com.jaarvis.commandcenter/files/screenshots/ ci-screenshots/
+            ./gradlew -Pkotlin.compiler.execution.strategy=in-process -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true connectedDebugAndroidTest
+            mkdir -p ci-screenshots ci-reports
+            cp -R app/build/reports/androidTests ci-reports/default
+            adb pull /sdcard/Android/data/com.jaarvis.commandcenter.cinematic/files/screenshots/ ci-screenshots/default
+            adb shell wm size 720x1280
+            adb shell wm density 320
+            adb shell settings put system font_scale 1.5
+            ./gradlew -Pkotlin.compiler.execution.strategy=in-process -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true -Pandroid.testInstrumentationRunnerArguments.class=com.jaarvis.CommandCenterTest connectedDebugAndroidTest
+            cp -R app/build/reports/androidTests ci-reports/large-text
+            adb pull /sdcard/Android/data/com.jaarvis.commandcenter.cinematic/files/screenshots/ ci-screenshots/large-text
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: jaarvis-instrumentation-reports
           path: |
             app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
             ci-screenshots/
+            ci-reports/

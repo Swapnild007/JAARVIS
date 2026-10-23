@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.jaarvis.core.CommandsTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-23T03:29:33" hostname="29175fcfa935" time="0.038">
+<testsuite name="com.jaarvis.core.CommandsTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-23T07:33:26" hostname="23491a41ecfd" time="0.048">
   <properties/>
-  <testcase name="routesAllCoreCommands" classname="com.jaarvis.core.CommandsTest" time="0.024"/>
-  <testcase name="rejectsInvalidOrAmbiguousAlarm" classname="com.jaarvis.core.CommandsTest" time="0.003"/>
-  <testcase name="stateTracksActualOperationLifecycle" classname="com.jaarvis.core.CommandsTest" time="0.008"/>
-  <testcase name="resetInvalidatesLateCompletion" classname="com.jaarvis.core.CommandsTest" time="0.0"/>
-  <testcase name="parsesAlarmWithNoonMidnightAnd24HourTime" classname="com.jaarvis.core.CommandsTest" time="0.002"/>
+  <testcase name="arbitraryProseCannotDispatchDeviceActions" classname="com.jaarvis.core.CommandsTest" time="0.022"/>
+  <testcase name="navigationTreatsDestinationAsData" classname="com.jaarvis.core.CommandsTest" time="0.002"/>
+  <testcase name="routesAllCoreCommands" classname="com.jaarvis.core.CommandsTest" time="0.002"/>
+  <testcase name="everyCommandHasOneExplicitPlanAndOutcomeIsHonest" classname="com.jaarvis.core.CommandsTest" time="0.008"/>
+  <testcase name="rejectsInvalidOrAmbiguousAlarm" classname="com.jaarvis.core.CommandsTest" time="0.001"/>
+  <testcase name="resetInvalidatesLateEvents" classname="com.jaarvis.core.CommandsTest" time="0.008"/>
+  <testcase name="boundsTimersAndConvertsUnitsWithoutOverflow" classname="com.jaarvis.core.CommandsTest" time="0.002"/>
+  <testcase name="stateTracksActualOperationLifecycle" classname="com.jaarvis.core.CommandsTest" time="0.0"/>
+  <testcase name="parsesAlarmWithNoonMidnightAnd24HourTime" classname="com.jaarvis.core.CommandsTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

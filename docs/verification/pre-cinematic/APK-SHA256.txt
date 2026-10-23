@@ -1,0 +1,1 @@
+a3a0ba4fc6a7c49abc2d0d0092d564938b7cfdd94969ffc57ec960a8cc591fbb  JAARVIS/app/build/outputs/apk/debug/app-debug.apk

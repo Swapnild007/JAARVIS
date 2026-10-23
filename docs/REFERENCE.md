@@ -18,4 +18,4 @@ Inspected https://github.com/AnaaySampat/jarvis at commit `923c549183190df248a73
 
 ## Initial repository state
 
-JAARVIS was empty: no commits, source, workflows, tags or actual remote main ref. A local README seed commit establishes an ancestor for development. Publishing that seed to main was blocked by automatic approval review. No existing work was overwritten. SAARTHI was not accessed or modified.
+JAARVIS had no remote commits or branches when inspected. The review ZIP recovered the native source; its original git history was absent. The current session published the full recovered baseline and one feature branch, with a consolidated draft PR targeting `codex/recovered-baseline`. Main was not initialized or overwritten. See `RECOVERY.md` for provenance and `ARCHITECTURE.md` for the decision to retain native Compose.

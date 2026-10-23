@@ -38,6 +38,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.jaarvis.CommandCenterModel
 import com.jaarvis.core.ReactorState
+import com.jaarvis.core.LocalApp
 import java.math.BigDecimal
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -52,7 +53,7 @@ fun CommandCenterApp(model: CommandCenterModel) {
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event ->
             resumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-            if (event == Lifecycle.Event.ON_STOP) model.onBackground()
+            if (event == Lifecycle.Event.ON_STOP && (context as? android.app.Activity)?.isChangingConfigurations != true) model.onBackground()
         }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
@@ -77,21 +78,30 @@ fun CommandCenterApp(model: CommandCenterModel) {
         Surface(Modifier.fillMaxSize(), color = navy) {
             Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(navy, Color(0xFF07182B), navy)))
                 .safeDrawingPadding().imePadding()) {
-                if (!imeVisible) Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+                if (!imeVisible || screen != null) Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     if (screen != null) TextButton(onClick = { screen = null }) { Text("‹  BACK") }
-                    else Text("J / C", color = Cyan, fontFamily = FontFamily.Monospace, fontSize = 18.sp)
+                    else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Box(Modifier.size(36.dp).border(1.dp, Cyan.copy(alpha = .5f), RoundedCornerShape(10.dp))
+                            .background(Brush.radialGradient(listOf(Cyan.copy(alpha = .16f), Color.Transparent))), contentAlignment = Alignment.Center) {
+                            Text("J", color = Color.White, fontFamily = FontFamily.Monospace, fontSize = 24.sp)
+                        }
+                        Text("JAARVIS", color = Color.White, fontSize = 18.sp, letterSpacing = 4.sp, fontWeight = FontWeight.Light)
+                    }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text("JAARVIS", fontSize = 13.sp, fontWeight = FontWeight.Medium, letterSpacing = 4.sp)
-                        Text("COMMAND CENTER  /  01", color = Muted, fontSize = 8.sp, letterSpacing = 1.sp)
+                        if (screen != null) Text("JAARVIS", fontSize = 13.sp, letterSpacing = 3.sp)
+                        Text("CINEMATIC / 03", color = Gold, fontSize = 8.sp, letterSpacing = 1.sp)
+                        Text("NATIVE ANDROID", color = Muted, fontSize = 7.sp, letterSpacing = 1.sp)
                     }
                 }
                 HorizontalDivider(color = Cyan.copy(alpha = .15f))
+                key(screen) {
                 Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
                     if (screen == null) {
                         Home(model, resumed, listen) { screen = it.name }
                     } else ModuleScreen(Module.valueOf(screen!!), model)
                     Spacer(Modifier.height(20.dp))
+                }
                 }
                 CommandDock(model, listen, imeVisible)
             }
@@ -103,28 +113,23 @@ fun CommandCenterApp(model: CommandCenterModel) {
 private fun Home(model: CommandCenterModel, resumed: Boolean, listen: () -> Unit, open: (Module) -> Unit) {
     var now by remember { mutableStateOf(ZonedDateTime.now()) }
     LaunchedEffect(resumed) { if (resumed) while (true) { now = ZonedDateTime.now(); delay(1000L * (60 - now.second)) } }
-    Row(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Column {
-            Text(now.format(DateTimeFormatter.ofPattern("HH:mm")), fontSize = 30.sp, fontWeight = FontWeight.Light)
-            Text(now.format(DateTimeFormatter.ofPattern("EEE, dd MMM  •  z")), fontSize = 10.sp, color = Muted)
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text("LOCAL CORE", color = Cyan, fontSize = 10.sp, letterSpacing = 1.sp)
-            Text("BATTERY  ${model.battery?.let { "$it%" } ?: "UNAVAILABLE"}", fontSize = 10.sp, color = Muted)
-            Text("NO CLOUD CONNECTION", color = Muted, fontSize = 8.sp)
-        }
+    Row(Modifier.fillMaxWidth().padding(top = 11.dp, bottom = 2.dp), horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically) {
+        Text(now.format(DateTimeFormatter.ofPattern("HH:mm  /  EEE dd MMM")), fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace, color = Muted)
+        Text("PWR ${model.battery?.let { "$it%" } ?: "—"}  •  LOCAL", color = Cyan, fontSize = 9.sp, letterSpacing = 1.sp)
     }
     val context = LocalContext.current
     val systemMotion = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
     ReactorMap(model.state, if (model.preferences.reducedMotion) 0f else model.level, model.preferences.motion,
         resumed && !model.preferences.reducedMotion && systemMotion, listen, open)
-    Text("ONE CORE. EIGHT CONNECTIONS.", color = Muted, fontSize = 9.sp, letterSpacing = 2.sp,
-        modifier = Modifier.alignCenter())
-    Spacer(Modifier.height(18.dp))
+    Text("ONE CORE. EIGHT CONNECTIONS.", color = Muted, fontSize = 8.sp, letterSpacing = 2.sp,
+        modifier = Modifier.alignCenter().padding(top = 10.dp))
+    Spacer(Modifier.height(2.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        OutlinedButton(onClick = { model.submit("time") }, modifier = Modifier.weight(1f)) { Text("TIME", fontSize = 11.sp) }
-        OutlinedButton(onClick = { model.submit("battery") }, modifier = Modifier.weight(1f)) { Text("BATTERY", fontSize = 11.sp) }
-        OutlinedButton(onClick = { open(Module.SYSTEM) }, modifier = Modifier.weight(1f)) { Text("PREFS", fontSize = 11.sp) }
+        TextButton(onClick = { model.submit("time") }, modifier = Modifier.weight(1f)) { Text("TIME", fontSize = 11.sp) }
+        TextButton(onClick = { model.submit("battery") }, modifier = Modifier.weight(1f)) { Text("BATTERY", fontSize = 11.sp) }
+        TextButton(onClick = { open(Module.SYSTEM) }, modifier = Modifier.weight(1f)) { Text("PREFS", fontSize = 11.sp) }
     }
 }
 
@@ -135,22 +140,24 @@ private fun CommandDock(model: CommandCenterModel, listen: () -> Unit, imeVisibl
     var command by rememberSaveable { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
     fun submit() { if (command.isNotBlank()) { model.submit(command); command = ""; keyboard?.hide() } }
-    Column(Modifier.fillMaxWidth().background(Panel.copy(alpha = .95f)).padding(horizontal = 16.dp, vertical = 10.dp)) {
+    Column(Modifier.fillMaxWidth().semantics { testTag = "command-dock" }.border(1.dp, Cyan.copy(alpha = .18f), RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+        .background(Brush.verticalGradient(listOf(Color(0xFF0B2334), Color(0xFF04111C))), RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+        .padding(horizontal = 14.dp, vertical = 6.dp)) {
         if (!imeVisible) Row(verticalAlignment = Alignment.CenterVertically) {
             Text("●  ${model.state.name}", color = if (model.state == ReactorState.ERROR) MaterialTheme.colorScheme.error else Cyan,
                 fontSize = 9.sp, letterSpacing = 1.sp, modifier = Modifier.weight(1f))
-            if (model.state != ReactorState.IDLE) TextButton(onClick = model::cancel, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("RESET", fontSize = 10.sp) }
+            if (model.state != ReactorState.IDLE) TextButton(onClick = model::cancel, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (model.state in setOf(ReactorState.COMPLETED, ReactorState.ERROR)) "RESET" else "STOP", fontSize = 10.sp) }
             TextButton(onClick = listen, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (model.state == ReactorState.LISTENING) "STOP MIC" else "VOICE", fontSize = 10.sp) }
         }
-        if (!imeVisible) Text(model.status, color = if (model.state == ReactorState.ERROR) MaterialTheme.colorScheme.error else Muted,
-            fontSize = 12.sp, lineHeight = 17.sp, maxLines = 4,
+        Text(model.status, color = if (model.state == ReactorState.ERROR) MaterialTheme.colorScheme.error else Muted,
+            fontSize = 11.sp, lineHeight = 15.sp, maxLines = 2,
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(value = command, onValueChange = { command = it.take(500) }, label = { Text("Enter a local command") },
-                modifier = Modifier.weight(1f), singleLine = true, shape = RoundedCornerShape(12.dp),
+            OutlinedTextField(value = command, onValueChange = { command = it.take(500) }, label = { Text("Enter a local command", fontSize = 11.sp) },
+                modifier = Modifier.weight(1f), singleLine = true, shape = RoundedCornerShape(18.dp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send), keyboardActions = KeyboardActions(onSend = { submit() }))
-            Button(onClick = { submit() }, enabled = command.isNotBlank(), contentPadding = PaddingValues(12.dp),
+            Button(onClick = { submit() }, enabled = command.isNotBlank(), shape = RoundedCornerShape(18.dp), contentPadding = PaddingValues(12.dp),
                 modifier = Modifier.sizeIn(minWidth = 52.dp, minHeight = 52.dp).semantics { contentDescription = "Send command" }) { Text("GO") }
         }
     }
@@ -165,16 +172,18 @@ private fun ModuleScreen(module: Module, model: CommandCenterModel) {
     Spacer(Modifier.height(24.dp))
     when (module) {
         Module.INTELLIGENCE -> {
-            Info("Local intelligence", "The command router handles time, date, battery, Settings, YouTube and alarm requests. General AI is not connected.")
+            Info("Local intelligence", "One bounded local core handles device readings, app launches, Maps and Clock handoffs. General AI is not connected. These are local rules, not an autonomous AI planner.")
             Action("Ask for the current date") { model.submit("date") }
-            if (model.history.isEmpty()) Text("No commands in this session.", color = Muted)
-            model.history.forEach { record -> Info(record.command, record.response) }
-            Action("Clear session history", action = model::clearHistory)
+            Info("Command history", "The latest 30 commands stay on this device. VERIFIED means a device reading returned; HANDOFF means Android accepted an intent, not that the other app completed a task.")
+            if (model.history.isEmpty()) Text("No saved commands.", color = Muted)
+            model.history.forEach { record -> Info(record.command, "${record.outcome} · ${java.time.Instant.ofEpochMilli(record.timestamp).atZone(java.time.ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd MMM HH:mm"))}\n${record.response}") }
+            Action("Clear command history", action = model::clearHistory)
         }
         Module.OPERATIONS -> {
             Info("Device control", "Actions use Android’s supported intents. JAARVIS does not control arbitrary app screens.")
             Action("Open Android Settings") { model.submit("open settings") }
             Action("Open YouTube") { model.submit("open youtube") }
+            LocalApp.entries.forEach { app -> Action("Open ${app.label}") { model.submit("open ${app.label.lowercase()}") } }
             Action("Read battery level") { model.submit("battery") }
         }
         Module.RESEARCH -> Research()
@@ -185,7 +194,9 @@ private fun ModuleScreen(module: Module, model: CommandCenterModel) {
             Action("Clear note") { model.saveNote("") }
         }
         Module.ENGINEERING -> {
-            Info("Supported grammar", "time\ndate\nbattery\nopen settings\nopen youtube\nalarm 07:30\nset alarm at 7:30 pm")
+            Info("Supported grammar", "time\ndate\nbattery\nopen settings / youtube / camera / maps / clock / calculator\nnavigate to Pune\nalarm 07:30\nset alarm at 7:30 pm\ntimer 5 minutes\ncancel")
+            Info("Last command plan", model.activePlan.ifEmpty { "No active plan. Local commands produce one allowlisted step." })
+            model.history.firstOrNull()?.let { Info("Execution trace", "${it.plan}\n${it.stages.joinToString(" → ")}") }
             Info("Native architecture", "Kotlin + Compose Canvas\nBounded local command router\nEvent-driven reactor states\nAndroid SpeechRecognizer + TextToSpeech\nNo server or API key required")
             Info("Integration boundary", "No code execution, app builder, shell access or remote device control is available in this release.")
         }
@@ -194,7 +205,8 @@ private fun ModuleScreen(module: Module, model: CommandCenterModel) {
         Module.AUTOMATIONS -> {
             Info("Clock handoff", "Enter ‘alarm 07:30’ below. Android Clock opens for review and saving. JAARVIS cannot verify that you saved the alarm.")
             Action("Review a 07:30 alarm in Clock") { model.submit("alarm 07:30") }
-            Info("Reminder foundation", "A reusable ReminderScheduler interface delegates to Android Clock. No JAARVIS notification scheduling, incoming calls, wake word, screen-off listening or two-way reminder voice is implemented.")
+            Action("Review a 5 minute timer in Clock") { model.submit("timer 5 minutes") }
+            Info("Reminder foundation", "Alarm and timer requests delegate to Android Clock. No JAARVIS notification scheduling, incoming calls, wake word, screen-off listening or two-way reminder voice is implemented.")
         }
     }
 }
@@ -235,7 +247,7 @@ private fun Finance() {
 private fun SystemPreferences(model: CommandCenterModel) {
     val context = LocalContext.current
     val p = model.preferences
-    Info("Android device", "${Build.MANUFACTURER} ${Build.MODEL}\nAndroid ${Build.VERSION.RELEASE} · API ${Build.VERSION.SDK_INT}\nBattery ${model.battery?.let { "$it%" } ?: "unavailable"}\nSpeech service: ${if (model.speechAvailable) "installed" else "unavailable"}\nTTS engine: ${if (model.ttsReady) "ready" else "initializing or unavailable"}")
+    Info("Android device", "${Build.MANUFACTURER} ${Build.MODEL}\nAndroid ${Build.VERSION.RELEASE} · API ${Build.VERSION.SDK_INT}\nBattery ${model.battery?.let { "$it%" } ?: "unavailable"}\nSpeech service: ${if (model.onDeviceSpeech) "on-device available" else if (model.speechAvailable) "system service (may use network)" else "unavailable"}\nTTS engine: ${if (model.ttsReady) "ready" else "initializing or unavailable"}")
     Toggle("Spoken feedback", p.sound) { model.updatePreferences(p.copy(sound = it)) }
     Toggle("Reduced motion", p.reducedMotion) { model.updatePreferences(p.copy(reducedMotion = it)) }
     Text("Motion intensity", modifier = Modifier.padding(top = 16.dp))
@@ -248,7 +260,7 @@ private fun SystemPreferences(model: CommandCenterModel) {
         listOf("Midnight", "Deep blue").forEach { theme -> FilterChip(selected = p.theme == theme,
             onClick = { model.updatePreferences(p.copy(theme = theme)) }, label = { Text(theme) }) }
     }
-    Info("Voice privacy", "Microphone is requested only when you activate voice. Recognition is supplied by the installed Android speech service and may use its network. Nothing listens continuously. TTS uses your installed engine and voice data.")
+    Info("Voice privacy", "Microphone is requested only when you activate voice. On Android 12+, on-device recognition is preferred when installed. Otherwise the Android speech service may use its network. Listening stops after 20 seconds without a result. Nothing listens continuously. TTS uses your installed engine and voice data.")
     Action("Open Android app permissions") {
         try {
             context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
