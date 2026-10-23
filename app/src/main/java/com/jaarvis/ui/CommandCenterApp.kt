@@ -78,7 +78,7 @@ fun CommandCenterApp(model: CommandCenterModel) {
         Surface(Modifier.fillMaxSize(), color = navy) {
             Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(navy, Color(0xFF07182B), navy)))
                 .safeDrawingPadding().imePadding()) {
-                if (!imeVisible) Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+                if (!imeVisible || screen != null) Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     if (screen != null) TextButton(onClick = { screen = null }) { Text("‹  BACK") }
                     else Text("J / C", color = Cyan, fontFamily = FontFamily.Monospace, fontSize = 18.sp)
