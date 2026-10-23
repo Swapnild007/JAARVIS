@@ -6,6 +6,7 @@ plugins {
 android {
     namespace = "com.jaarvis"
     compileSdk = 35
+    buildToolsVersion = "35.0.0"
     defaultConfig {
         applicationId = "com.jaarvis.commandcenter"
         minSdk = 26

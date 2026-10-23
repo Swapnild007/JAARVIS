@@ -45,7 +45,7 @@ class CommandCenterModel(application: Application) : AndroidViewModel(applicatio
     private fun event(event: ReactorEvent) { state = machine.accept(event) }
     fun updatePreferences(value: Preferences) {
         preferences = value; store.save(value)
-        if (!value.sound && state == ReactorState.SPEAKING) { output.stop(); event(ReactorEvent.Complete) }
+        if (!value.sound) { output.stop(); if (state == ReactorState.SPEAKING || state == ReactorState.EXECUTING) event(ReactorEvent.Complete) }
     }
     fun saveNote(value: String) { note = value; store.saveNote(value) }
     fun clearHistory() { history.clear(); historyStore.save(emptyList()) }
