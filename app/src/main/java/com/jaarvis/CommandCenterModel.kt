@@ -97,7 +97,9 @@ class CommandCenterModel(application: Application) : AndroidViewModel(applicatio
                 if (key == null) { status = "Saved AI key cannot be decrypted. Re-enter it in System settings."; event(ReactorEvent.Fail); return@launch }
                 activePlan = "Ask Gemini for a conversational response"; event(ReactorEvent.Plan)
                 status = "Contacting Gemini…"; event(ReactorEvent.Execute)
-                val answer = try { aiProvider.reply(text, aiModel, key) }
+                val conversation = history.asReversed().filter { it.plan == "Ask Gemini for a conversational response" && it.success }
+                    .takeLast(4).flatMap { listOf("user" to it.input, "model" to it.response) }
+                val answer = try { aiProvider.reply(text, aiModel, key, conversation) }
                     catch (cancelled: CancellationException) { throw cancelled }
                     catch (error: Exception) { status = error.message ?: "AI request failed."; event(ReactorEvent.Fail); return@launch }
                 if (token != generation) return@launch
