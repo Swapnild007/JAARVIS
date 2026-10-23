@@ -56,7 +56,7 @@ fun ReactorMap(state: ReactorState, level: Float, motion: Float, animate: Boolea
     } else remember { mutableFloatStateOf(0f) }
     val accent by animateColorAsState(reactorAccent(state), tween(if (animate) 220 else 0), label = "reactor state")
     Column {
-        Box(Modifier.fillMaxWidth().height(if (largeText) 230.dp else 286.dp)) {
+        Box(Modifier.fillMaxWidth().height(if (largeText) 230.dp else 260.dp)) {
             Canvas(Modifier.fillMaxSize().semantics { contentDescription = "Cinematic layered reactor with orbital energy rings" }) {
                 drawReactor(state, if (animate) level else 0f, angle.value, accent, running)
             }
@@ -195,7 +195,7 @@ private fun DrawScope.drawReactor(state: ReactorState, level: Float, angle: Floa
 @Composable
 private fun SubsystemControl(module: Module, accent: Color, modifier: Modifier, open: (Module) -> Unit) {
     val shape = RoundedCornerShape(topStart = 4.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 4.dp)
-    Row(modifier.heightIn(min = 54.dp).border(1.dp, accent.copy(alpha = .28f), shape)
+    Row(modifier.heightIn(min = 48.dp).border(1.dp, accent.copy(alpha = .28f), shape)
         .background(Brush.linearGradient(listOf(Color(0xFF0A283A), Color(0xFF04111E))), shape)
         .clickable(role = Role.Button, onClick = { open(module) })
         .semantics { contentDescription = "Open ${module.name.lowercase()} module" }
@@ -203,8 +203,8 @@ private fun SubsystemControl(module: Module, accent: Color, modifier: Modifier, 
         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ModuleGlyph(module, accent, Modifier.size(22.dp))
         Column(Modifier.weight(1f)) {
-            Text(module.name, color = Color(0xFFE5F9FF), fontSize = 10.sp, fontWeight = FontWeight.Medium, letterSpacing = .4.sp, maxLines = 2)
-            Text("${module.code}  /  ${if (module == Module.RESEARCH) "BROWSER" else "LOCAL"}", color = Muted, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+            Text(module.name, color = Color(0xFFE5F9FF), fontSize = 10.sp, lineHeight = 13.sp, fontWeight = FontWeight.Medium, letterSpacing = .4.sp, maxLines = 2)
+            Text("${module.code}  /  ${if (module == Module.RESEARCH) "BROWSER" else "LOCAL"}", color = Muted, fontSize = 8.sp, lineHeight = 11.sp, fontFamily = FontFamily.Monospace)
         }
     }
 }

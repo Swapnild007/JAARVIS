@@ -1,6 +1,7 @@
 package com.jaarvis
 
 import android.graphics.Bitmap
+import androidx.compose.ui.unit.dp
 import java.io.File
 import androidx.lifecycle.ViewModelProvider
 import com.jaarvis.platform.HistoryStore
@@ -40,6 +41,17 @@ class CommandCenterTest {
     @Test fun homeRendersAndCanBeCaptured() {
         rule.onNodeWithContentDescription("Activate voice command").assertExists()
         rule.onNodeWithText("JAARVIS").assertExists()
+        // On the default portrait phone, every subsystem must fit above the fixed dock.
+        // Enlarged text intentionally uses accessible scrolling instead of shrinking touch targets.
+        val metrics = rule.activity.resources.displayMetrics
+        if (rule.activity.resources.configuration.fontScale <= 1.25f && metrics.heightPixels / metrics.density >= 780f) {
+            val dockTop = rule.onNodeWithTag("command-dock").getUnclippedBoundsInRoot().top
+            listOf("intelligence", "operations", "research", "memory", "engineering", "finance", "system", "automations").forEach { name ->
+                val node = rule.onNodeWithContentDescription("Open $name module")
+                node.assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+                check(node.getUnclippedBoundsInRoot().bottom <= dockTop) { "$name overlaps the command dock" }
+            }
+        }
         capture("home")
     }
 

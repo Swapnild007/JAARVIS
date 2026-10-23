@@ -140,7 +140,7 @@ private fun CommandDock(model: CommandCenterModel, listen: () -> Unit, imeVisibl
     var command by rememberSaveable { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
     fun submit() { if (command.isNotBlank()) { model.submit(command); command = ""; keyboard?.hide() } }
-    Column(Modifier.fillMaxWidth().border(1.dp, Cyan.copy(alpha = .18f), RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+    Column(Modifier.fillMaxWidth().semantics { testTag = "command-dock" }.border(1.dp, Cyan.copy(alpha = .18f), RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
         .background(Brush.verticalGradient(listOf(Color(0xFF0B2334), Color(0xFF04111C))), RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
         .padding(horizontal = 14.dp, vertical = 6.dp)) {
         if (!imeVisible) Row(verticalAlignment = Alignment.CenterVertically) {
