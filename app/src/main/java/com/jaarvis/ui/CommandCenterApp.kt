@@ -88,11 +88,13 @@ fun CommandCenterApp(model: CommandCenterModel) {
                     }
                 }
                 HorizontalDivider(color = Cyan.copy(alpha = .15f))
+                key(screen) {
                 Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
                     if (screen == null) {
                         Home(model, resumed, listen) { screen = it.name }
                     } else ModuleScreen(Module.valueOf(screen!!), model)
                     Spacer(Modifier.height(20.dp))
+                }
                 }
                 CommandDock(model, listen, imeVisible)
             }

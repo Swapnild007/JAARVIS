@@ -46,7 +46,7 @@ class CommandCenterTest {
     @Test fun everyModuleOpensAndBackReturnsHome() {
         listOf("intelligence", "operations", "research", "memory", "engineering", "finance", "system", "automations").forEach { name ->
             rule.onNodeWithContentDescription("Open $name module").performScrollTo().performClick()
-            rule.onNodeWithText(name.uppercase()).assertExists()
+            rule.onNodeWithText(name.uppercase()).assertIsDisplayed()
             capture(name)
             rule.onNodeWithText("‹  BACK").performClick()
             rule.onNodeWithText("ONE CORE. EIGHT CONNECTIONS.").assertExists()

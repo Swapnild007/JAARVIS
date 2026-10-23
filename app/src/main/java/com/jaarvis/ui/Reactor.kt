@@ -58,7 +58,7 @@ fun ReactorMap(state: ReactorState, level: Float, motion: Float, animate: Boolea
     val accessibleLayout = LocalDensity.current.fontScale > 1.25f
     val active = state in setOf(ReactorState.THINKING, ReactorState.PLANNING, ReactorState.EXECUTING, ReactorState.SPEAKING)
     Column {
-    BoxWithConstraints(Modifier.fillMaxWidth().heightIn(min = 360.dp, max = 440.dp).aspectRatio(1f)) {
+    BoxWithConstraints(Modifier.fillMaxWidth().heightIn(min = if (accessibleLayout) 240.dp else 360.dp, max = if (accessibleLayout) 300.dp else 440.dp).aspectRatio(1f)) {
         val width = maxWidth
         val height = maxHeight
         Canvas(Modifier.fillMaxSize().semantics { contentDescription = "Connected JARVIS reactor visualization" }) {

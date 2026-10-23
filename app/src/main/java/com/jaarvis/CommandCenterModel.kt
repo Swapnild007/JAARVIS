@@ -50,9 +50,10 @@ class CommandCenterModel(application: Application) : AndroidViewModel(applicatio
     fun saveNote(value: String) { note = value; store.saveNote(value) }
     fun clearHistory() { history.clear(); historyStore.save(emptyList()) }
     fun cancel() {
+        val handedOff = state != ReactorState.IDLE && history.firstOrNull()?.outcome == Outcome.HANDOFF
         generation++; operation?.cancel(); operation = null
         input.cancel(); output.stop(); level = 0f; activePlan = ""; event(ReactorEvent.Reset)
-        status = "Ready for a local command. Dispatched Clock or app requests must be cancelled in that app."
+        status = if (handedOff) "JAARVIS stopped. Cancel the external request in its app." else "Ready for a local command."
     }
     fun fail(message: String) {
         cancel(); event(ReactorEvent.Recognized); event(ReactorEvent.Fail); status = message
