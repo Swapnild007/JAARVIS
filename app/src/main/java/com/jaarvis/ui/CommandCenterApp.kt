@@ -78,13 +78,20 @@ fun CommandCenterApp(model: CommandCenterModel) {
         Surface(Modifier.fillMaxSize(), color = navy) {
             Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(navy, Color(0xFF07182B), navy)))
                 .safeDrawingPadding().imePadding()) {
-                if (!imeVisible || screen != null) Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+                if (!imeVisible || screen != null) Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     if (screen != null) TextButton(onClick = { screen = null }) { Text("‹  BACK") }
-                    else Text("J / C", color = Cyan, fontFamily = FontFamily.Monospace, fontSize = 18.sp)
+                    else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Box(Modifier.size(36.dp).border(1.dp, Cyan.copy(alpha = .5f), RoundedCornerShape(10.dp))
+                            .background(Brush.radialGradient(listOf(Cyan.copy(alpha = .16f), Color.Transparent))), contentAlignment = Alignment.Center) {
+                            Text("J", color = Color.White, fontFamily = FontFamily.Monospace, fontSize = 24.sp)
+                        }
+                        Text("JAARVIS", color = Color.White, fontSize = 18.sp, letterSpacing = 4.sp, fontWeight = FontWeight.Light)
+                    }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text("JAARVIS", fontSize = 13.sp, fontWeight = FontWeight.Medium, letterSpacing = 4.sp)
-                        Text("COMMAND CENTER  /  01", color = Muted, fontSize = 8.sp, letterSpacing = 1.sp)
+                        if (screen != null) Text("JAARVIS", fontSize = 13.sp, letterSpacing = 3.sp)
+                        Text("CINEMATIC / 03", color = Gold, fontSize = 8.sp, letterSpacing = 1.sp)
+                        Text("NATIVE ANDROID", color = Muted, fontSize = 7.sp, letterSpacing = 1.sp)
                     }
                 }
                 HorizontalDivider(color = Cyan.copy(alpha = .15f))
@@ -106,28 +113,23 @@ fun CommandCenterApp(model: CommandCenterModel) {
 private fun Home(model: CommandCenterModel, resumed: Boolean, listen: () -> Unit, open: (Module) -> Unit) {
     var now by remember { mutableStateOf(ZonedDateTime.now()) }
     LaunchedEffect(resumed) { if (resumed) while (true) { now = ZonedDateTime.now(); delay(1000L * (60 - now.second)) } }
-    Row(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Column {
-            Text(now.format(DateTimeFormatter.ofPattern("HH:mm")), fontSize = 30.sp, fontWeight = FontWeight.Light)
-            Text(now.format(DateTimeFormatter.ofPattern("EEE, dd MMM  •  z")), fontSize = 10.sp, color = Muted)
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text("LOCAL CORE", color = Cyan, fontSize = 10.sp, letterSpacing = 1.sp)
-            Text("BATTERY  ${model.battery?.let { "$it%" } ?: "UNAVAILABLE"}", fontSize = 10.sp, color = Muted)
-            Text("NO CLOUD CONNECTION", color = Muted, fontSize = 8.sp)
-        }
+    Row(Modifier.fillMaxWidth().padding(top = 11.dp, bottom = 2.dp), horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically) {
+        Text(now.format(DateTimeFormatter.ofPattern("HH:mm  /  EEE dd MMM")), fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace, color = Muted)
+        Text("PWR ${model.battery?.let { "$it%" } ?: "—"}  •  LOCAL", color = Cyan, fontSize = 9.sp, letterSpacing = 1.sp)
     }
     val context = LocalContext.current
     val systemMotion = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
     ReactorMap(model.state, if (model.preferences.reducedMotion) 0f else model.level, model.preferences.motion,
         resumed && !model.preferences.reducedMotion && systemMotion, listen, open)
-    Text("ONE CORE. EIGHT CONNECTIONS.", color = Muted, fontSize = 9.sp, letterSpacing = 2.sp,
-        modifier = Modifier.alignCenter())
-    Spacer(Modifier.height(18.dp))
+    Text("ONE CORE. EIGHT CONNECTIONS.", color = Muted, fontSize = 8.sp, letterSpacing = 2.sp,
+        modifier = Modifier.alignCenter().padding(top = 10.dp))
+    Spacer(Modifier.height(2.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        OutlinedButton(onClick = { model.submit("time") }, modifier = Modifier.weight(1f)) { Text("TIME", fontSize = 11.sp) }
-        OutlinedButton(onClick = { model.submit("battery") }, modifier = Modifier.weight(1f)) { Text("BATTERY", fontSize = 11.sp) }
-        OutlinedButton(onClick = { open(Module.SYSTEM) }, modifier = Modifier.weight(1f)) { Text("PREFS", fontSize = 11.sp) }
+        TextButton(onClick = { model.submit("time") }, modifier = Modifier.weight(1f)) { Text("TIME", fontSize = 11.sp) }
+        TextButton(onClick = { model.submit("battery") }, modifier = Modifier.weight(1f)) { Text("BATTERY", fontSize = 11.sp) }
+        TextButton(onClick = { open(Module.SYSTEM) }, modifier = Modifier.weight(1f)) { Text("PREFS", fontSize = 11.sp) }
     }
 }
 
@@ -138,7 +140,9 @@ private fun CommandDock(model: CommandCenterModel, listen: () -> Unit, imeVisibl
     var command by rememberSaveable { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
     fun submit() { if (command.isNotBlank()) { model.submit(command); command = ""; keyboard?.hide() } }
-    Column(Modifier.fillMaxWidth().background(Panel.copy(alpha = .95f)).padding(horizontal = 16.dp, vertical = 10.dp)) {
+    Column(Modifier.fillMaxWidth().border(1.dp, Cyan.copy(alpha = .18f), RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+        .background(Brush.verticalGradient(listOf(Color(0xFF0B2334), Color(0xFF04111C))), RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+        .padding(horizontal = 14.dp, vertical = 6.dp)) {
         if (!imeVisible) Row(verticalAlignment = Alignment.CenterVertically) {
             Text("●  ${model.state.name}", color = if (model.state == ReactorState.ERROR) MaterialTheme.colorScheme.error else Cyan,
                 fontSize = 9.sp, letterSpacing = 1.sp, modifier = Modifier.weight(1f))
@@ -146,14 +150,14 @@ private fun CommandDock(model: CommandCenterModel, listen: () -> Unit, imeVisibl
             TextButton(onClick = listen, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (model.state == ReactorState.LISTENING) "STOP MIC" else "VOICE", fontSize = 10.sp) }
         }
         Text(model.status, color = if (model.state == ReactorState.ERROR) MaterialTheme.colorScheme.error else Muted,
-            fontSize = 12.sp, lineHeight = 17.sp, maxLines = if (imeVisible) 2 else 4,
+            fontSize = 11.sp, lineHeight = 15.sp, maxLines = 2,
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(value = command, onValueChange = { command = it.take(500) }, label = { Text("Enter a local command") },
-                modifier = Modifier.weight(1f), singleLine = true, shape = RoundedCornerShape(12.dp),
+            OutlinedTextField(value = command, onValueChange = { command = it.take(500) }, label = { Text("Enter a local command", fontSize = 11.sp) },
+                modifier = Modifier.weight(1f), singleLine = true, shape = RoundedCornerShape(18.dp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send), keyboardActions = KeyboardActions(onSend = { submit() }))
-            Button(onClick = { submit() }, enabled = command.isNotBlank(), contentPadding = PaddingValues(12.dp),
+            Button(onClick = { submit() }, enabled = command.isNotBlank(), shape = RoundedCornerShape(18.dp), contentPadding = PaddingValues(12.dp),
                 modifier = Modifier.sizeIn(minWidth = 52.dp, minHeight = 52.dp).semantics { contentDescription = "Send command" }) { Text("GO") }
         }
     }

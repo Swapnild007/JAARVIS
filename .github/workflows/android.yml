@@ -64,13 +64,13 @@ jobs:
             ./gradlew -Pkotlin.compiler.execution.strategy=in-process -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true connectedDebugAndroidTest
             mkdir -p ci-screenshots ci-reports
             cp -R app/build/reports/androidTests ci-reports/default
-            adb pull /sdcard/Android/data/com.jaarvis.commandcenter/files/screenshots/ ci-screenshots/default
+            adb pull /sdcard/Android/data/com.jaarvis.commandcenter.cinematic/files/screenshots/ ci-screenshots/default
             adb shell wm size 720x1280
             adb shell wm density 320
             adb shell settings put system font_scale 1.5
             ./gradlew -Pkotlin.compiler.execution.strategy=in-process -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true -Pandroid.testInstrumentationRunnerArguments.class=com.jaarvis.CommandCenterTest connectedDebugAndroidTest
             cp -R app/build/reports/androidTests ci-reports/large-text
-            adb pull /sdcard/Android/data/com.jaarvis.commandcenter/files/screenshots/ ci-screenshots/large-text
+            adb pull /sdcard/Android/data/com.jaarvis.commandcenter.cinematic/files/screenshots/ ci-screenshots/large-text
       - uses: actions/upload-artifact@v4
         if: always()
         with:

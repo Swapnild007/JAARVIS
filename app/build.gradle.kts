@@ -11,9 +11,17 @@ android {
         applicationId = "com.jaarvis.commandcenter"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0-r1"
+        versionCode = 3
+        versionName = "0.3.0"
+        resValue("string", "app_name", "JAARVIS")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        getByName("debug") {
+            applicationIdSuffix = ".cinematic"
+            versionNameSuffix = "-cinematic"
+            resValue("string", "app_name", "JAARVIS Cinematic")
+        }
     }
     buildFeatures { compose = true }
     compileOptions {
