@@ -2,6 +2,7 @@ package com.jaarvis.platform
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -18,13 +19,17 @@ import java.util.UUID
 class AndroidSpeechInput(private val context: Context) : SpeechInput {
     private var recognizer: SpeechRecognizer? = null
     private var generation = 0
-    override val available get() = SpeechRecognizer.isRecognitionAvailable(context)
+    private val handler = Handler(Looper.getMainLooper())
+    private var timeout: Runnable? = null
+    override val onDevice get() = Build.VERSION.SDK_INT >= 31 && SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
+    override val available get() = onDevice || SpeechRecognizer.isRecognitionAvailable(context)
     override fun start(onText: (String) -> Unit, onLevel: (Float) -> Unit, onError: (String) -> Unit) {
         cancel()
         if (!available) { onError("No speech recognition service is installed. Use the keyboard."); return }
         val token = generation
         try {
-            val engine = SpeechRecognizer.createSpeechRecognizer(context)
+            val engine = if (Build.VERSION.SDK_INT >= 31 && onDevice) SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
+                else SpeechRecognizer.createSpeechRecognizer(context)
             recognizer = engine
             engine.setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {}
@@ -53,21 +58,28 @@ class AndroidSpeechInput(private val context: Context) : SpeechInput {
                 override fun onPartialResults(partialResults: Bundle?) {}
                 override fun onEvent(eventType: Int, params: Bundle?) {}
             })
+            timeout = Runnable { if (token == generation) { cancel(); onError("Listening timed out. Tap to retry or type a command.") } }.also { handler.postDelayed(it, 20000) }
             engine.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                 .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
                 .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1))
         } catch (_: RuntimeException) { cancel(); onError("Speech service could not start. Type a command instead.") }
     }
-    override fun cancel() { generation++; recognizer?.cancel(); recognizer?.destroy(); recognizer = null }
+    override fun cancel() {
+        generation++
+        timeout?.let(handler::removeCallbacks); timeout = null
+        val old = recognizer; recognizer = null
+        try { old?.cancel() } finally { old?.destroy() }
+    }
     override fun close() = cancel()
 }
 
-class AndroidSpeechOutput(context: Context) : SpeechOutput {
+class AndroidSpeechOutput(context: Context, private val readiness: (Boolean) -> Unit = {}) : SpeechOutput {
     private val handler = Handler(Looper.getMainLooper())
     private var engine: TextToSpeech? = null
     private var initialized = false
     private var activeId: String? = null
+    private var timeout: Runnable? = null
     override val ready get() = initialized
     init {
         engine = TextToSpeech(context) { status ->
@@ -76,22 +88,25 @@ class AndroidSpeechOutput(context: Context) : SpeechOutput {
                 val result = engine?.setLanguage(Locale.getDefault())
                 initialized = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED
             }
+            readiness(initialized)
         }
     }
     override fun speak(text: String, onStart: () -> Unit, onDone: () -> Unit, onError: () -> Unit): Boolean {
         if (!ready) return false
+        stop()
         val id = UUID.randomUUID().toString()
         activeId = id
         engine?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) { handler.post { if (activeId == utteranceId) onStart() } }
-            override fun onDone(utteranceId: String?) { handler.post { if (activeId == utteranceId) { activeId = null; onDone() } } }
+            override fun onDone(utteranceId: String?) { handler.post { if (activeId == utteranceId) { activeId = null; timeout?.let(handler::removeCallbacks); timeout = null; onDone() } } }
             @Deprecated("Platform callback")
-            override fun onError(utteranceId: String?) { handler.post { if (activeId == utteranceId) { activeId = null; onError() } } }
+            override fun onError(utteranceId: String?) { handler.post { if (activeId == utteranceId) { activeId = null; timeout?.let(handler::removeCallbacks); timeout = null; onError() } } }
         })
         val accepted = engine?.speak(text, TextToSpeech.QUEUE_FLUSH, null, id) == TextToSpeech.SUCCESS
         if (!accepted) activeId = null
+        else timeout = Runnable { if (activeId == id) { stop(); onError() } }.also { handler.postDelayed(it, 45000) }
         return accepted
     }
-    override fun stop() { activeId = null; engine?.stop() }
+    override fun stop() { activeId = null; timeout?.let(handler::removeCallbacks); timeout = null; engine?.stop() }
     override fun close() { stop(); initialized = false; engine?.shutdown(); engine = null }
 }

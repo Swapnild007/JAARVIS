@@ -38,6 +38,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.jaarvis.CommandCenterModel
 import com.jaarvis.core.ReactorState
+import com.jaarvis.core.LocalApp
 import java.math.BigDecimal
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -52,7 +53,7 @@ fun CommandCenterApp(model: CommandCenterModel) {
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event ->
             resumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-            if (event == Lifecycle.Event.ON_STOP) model.onBackground()
+            if (event == Lifecycle.Event.ON_STOP && (context as? android.app.Activity)?.isChangingConfigurations != true) model.onBackground()
         }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
@@ -139,7 +140,7 @@ private fun CommandDock(model: CommandCenterModel, listen: () -> Unit, imeVisibl
         if (!imeVisible) Row(verticalAlignment = Alignment.CenterVertically) {
             Text("●  ${model.state.name}", color = if (model.state == ReactorState.ERROR) MaterialTheme.colorScheme.error else Cyan,
                 fontSize = 9.sp, letterSpacing = 1.sp, modifier = Modifier.weight(1f))
-            if (model.state != ReactorState.IDLE) TextButton(onClick = model::cancel, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("RESET", fontSize = 10.sp) }
+            if (model.state != ReactorState.IDLE) TextButton(onClick = model::cancel, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (model.state in setOf(ReactorState.COMPLETED, ReactorState.ERROR)) "RESET" else "STOP", fontSize = 10.sp) }
             TextButton(onClick = listen, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (model.state == ReactorState.LISTENING) "STOP MIC" else "VOICE", fontSize = 10.sp) }
         }
         if (!imeVisible) Text(model.status, color = if (model.state == ReactorState.ERROR) MaterialTheme.colorScheme.error else Muted,
@@ -165,16 +166,18 @@ private fun ModuleScreen(module: Module, model: CommandCenterModel) {
     Spacer(Modifier.height(24.dp))
     when (module) {
         Module.INTELLIGENCE -> {
-            Info("Local intelligence", "The command router handles time, date, battery, Settings, YouTube and alarm requests. General AI is not connected.")
+            Info("Local intelligence", "One bounded local core handles device readings, app launches, Maps and Clock handoffs. General AI is not connected. These are local rules, not an autonomous AI planner.")
             Action("Ask for the current date") { model.submit("date") }
-            if (model.history.isEmpty()) Text("No commands in this session.", color = Muted)
-            model.history.forEach { record -> Info(record.command, record.response) }
-            Action("Clear session history", action = model::clearHistory)
+            Info("Command history", "The latest 30 commands stay on this device. VERIFIED means a device reading returned; HANDOFF means Android accepted an intent, not that the other app completed a task.")
+            if (model.history.isEmpty()) Text("No saved commands.", color = Muted)
+            model.history.forEach { record -> Info(record.command, "${record.outcome} · ${java.time.Instant.ofEpochMilli(record.timestamp).atZone(java.time.ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd MMM HH:mm"))}\n${record.response}") }
+            Action("Clear command history", action = model::clearHistory)
         }
         Module.OPERATIONS -> {
             Info("Device control", "Actions use Android’s supported intents. JAARVIS does not control arbitrary app screens.")
             Action("Open Android Settings") { model.submit("open settings") }
             Action("Open YouTube") { model.submit("open youtube") }
+            LocalApp.entries.forEach { app -> Action("Open ${app.label}") { model.submit("open ${app.label.lowercase()}") } }
             Action("Read battery level") { model.submit("battery") }
         }
         Module.RESEARCH -> Research()
@@ -185,7 +188,9 @@ private fun ModuleScreen(module: Module, model: CommandCenterModel) {
             Action("Clear note") { model.saveNote("") }
         }
         Module.ENGINEERING -> {
-            Info("Supported grammar", "time\ndate\nbattery\nopen settings\nopen youtube\nalarm 07:30\nset alarm at 7:30 pm")
+            Info("Supported grammar", "time\ndate\nbattery\nopen settings / youtube / camera / maps / clock / calculator\nnavigate to Pune\nalarm 07:30\nset alarm at 7:30 pm\ntimer 5 minutes\ncancel")
+            Info("Last command plan", model.activePlan.ifEmpty { "No active plan. Local commands produce one allowlisted step." })
+            model.history.firstOrNull()?.let { Info("Execution trace", "${it.plan}\n${it.stages.joinToString(" → ")}") }
             Info("Native architecture", "Kotlin + Compose Canvas\nBounded local command router\nEvent-driven reactor states\nAndroid SpeechRecognizer + TextToSpeech\nNo server or API key required")
             Info("Integration boundary", "No code execution, app builder, shell access or remote device control is available in this release.")
         }
@@ -194,7 +199,8 @@ private fun ModuleScreen(module: Module, model: CommandCenterModel) {
         Module.AUTOMATIONS -> {
             Info("Clock handoff", "Enter ‘alarm 07:30’ below. Android Clock opens for review and saving. JAARVIS cannot verify that you saved the alarm.")
             Action("Review a 07:30 alarm in Clock") { model.submit("alarm 07:30") }
-            Info("Reminder foundation", "A reusable ReminderScheduler interface delegates to Android Clock. No JAARVIS notification scheduling, incoming calls, wake word, screen-off listening or two-way reminder voice is implemented.")
+            Action("Review a 5 minute timer in Clock") { model.submit("timer 5 minutes") }
+            Info("Reminder foundation", "Alarm and timer requests delegate to Android Clock. No JAARVIS notification scheduling, incoming calls, wake word, screen-off listening or two-way reminder voice is implemented.")
         }
     }
 }
@@ -235,7 +241,7 @@ private fun Finance() {
 private fun SystemPreferences(model: CommandCenterModel) {
     val context = LocalContext.current
     val p = model.preferences
-    Info("Android device", "${Build.MANUFACTURER} ${Build.MODEL}\nAndroid ${Build.VERSION.RELEASE} · API ${Build.VERSION.SDK_INT}\nBattery ${model.battery?.let { "$it%" } ?: "unavailable"}\nSpeech service: ${if (model.speechAvailable) "installed" else "unavailable"}\nTTS engine: ${if (model.ttsReady) "ready" else "initializing or unavailable"}")
+    Info("Android device", "${Build.MANUFACTURER} ${Build.MODEL}\nAndroid ${Build.VERSION.RELEASE} · API ${Build.VERSION.SDK_INT}\nBattery ${model.battery?.let { "$it%" } ?: "unavailable"}\nSpeech service: ${if (model.onDeviceSpeech) "on-device available" else if (model.speechAvailable) "system service (may use network)" else "unavailable"}\nTTS engine: ${if (model.ttsReady) "ready" else "initializing or unavailable"}")
     Toggle("Spoken feedback", p.sound) { model.updatePreferences(p.copy(sound = it)) }
     Toggle("Reduced motion", p.reducedMotion) { model.updatePreferences(p.copy(reducedMotion = it)) }
     Text("Motion intensity", modifier = Modifier.padding(top = 16.dp))
@@ -248,7 +254,7 @@ private fun SystemPreferences(model: CommandCenterModel) {
         listOf("Midnight", "Deep blue").forEach { theme -> FilterChip(selected = p.theme == theme,
             onClick = { model.updatePreferences(p.copy(theme = theme)) }, label = { Text(theme) }) }
     }
-    Info("Voice privacy", "Microphone is requested only when you activate voice. Recognition is supplied by the installed Android speech service and may use its network. Nothing listens continuously. TTS uses your installed engine and voice data.")
+    Info("Voice privacy", "Microphone is requested only when you activate voice. On Android 12+, on-device recognition is preferred when installed. Otherwise the Android speech service may use its network. Listening stops after 20 seconds without a result. Nothing listens continuously. TTS uses your installed engine and voice data.")
     Action("Open Android app permissions") {
         try {
             context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))

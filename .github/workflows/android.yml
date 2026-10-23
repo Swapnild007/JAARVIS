@@ -2,7 +2,7 @@ name: Android verification
 on:
   pull_request:
   push:
-    branches: [feat/jaarvis-command-center]
+    branches: ["codex/release-1-command-center"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,6 +18,7 @@ jobs:
           java-version: '17'
       - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
       - run: ./gradlew --no-daemon assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
       - uses: actions/upload-artifact@v4
         if: always()
