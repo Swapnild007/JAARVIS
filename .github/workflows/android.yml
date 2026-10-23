@@ -1,6 +1,9 @@
 name: Android verification
 on:
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
   workflow_dispatch:
 concurrency:
   group: jaarvis-${{ github.event.pull_request.number || github.ref }}
@@ -58,7 +61,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: |
-            ./gradlew connectedDebugAndroidTest
+            ./gradlew -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true connectedDebugAndroidTest
             adb pull /sdcard/Android/data/com.jaarvis.commandcenter/files/screenshots/ ci-screenshots/
       - uses: actions/upload-artifact@v4
         if: always()
@@ -66,4 +69,5 @@ jobs:
           name: jaarvis-instrumentation-reports
           path: |
             app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
             ci-screenshots/

@@ -1,16 +1,9 @@
-# Next session
+# Release 1 acceptance first
 
-## P0 · Release gate
+P0: Complete remaining API 35 CI checks, inspect screenshots, fix any failures in the existing draft PR #1. Do not open another PR, merge, or deploy.
 
-1. Establish main as a PR base only with explicit approval if it is still absent; open the prepared draft PR. Do not merge or deploy.
-2. Install CI-built debug APK on the user's physical OPPO phone. Validate microphone denial/grant, installed recognizer, TTS engine/language, device-local clock, YouTube presence, Clock confirmation, keyboard, TalkBack, rotation, large font and navigation gestures.
-3. Profile actual animation frame time and background power. Software-emulator timing does not establish phone performance.
-4. Run the instrumented suite on API 35 through GitHub Actions. Physical phone success and API 29 emulator success are separate evidence.
+P0: Perform the physical-device checklist in DEVICE_ACCEPTANCE.md. Capture actual voice input/output, microphone denial, OEM app availability and Clock delivery evidence. Inspect motion, TalkBack, large text, orientation, and background battery use. Emulator evidence is separate from physical-device evidence.
 
-## P1 · Reminder delivery
+P1: Decide a securely retained signing identity for update continuity before any production release. The old review debug key is unavailable; do not pretend debug builds can always upgrade each other. Review dependency version alignment; lint may report newer lifecycle libraries. Do not blindly upgrade an entire toolchain during R1 validation.
 
-Add JAARVIS-owned local notification reminders with notification permission handling, persistent schedules, reboot restore, timezone changes, cancellation and Doze tests. Choose exact alarms only when warranted and authorized; handle Android exact-alarm access restrictions. Do not describe Clock intent requests as verified reminders.
-
-## P2 · Voice extension
-
-Add secure cloud-provider options only as a separately scoped capability. Research wake-word, screen-off audio and call-like reminders against Android foreground-service, microphone, notification and full-screen intent restrictions. Specify and test lifecycle, privacy and power costs before exposing controls.
+After Release 1 acceptance, begin Release 2: one unified orchestration core, user-configured AI providers, encrypted credential storage, explicit personal-memory approval/export/delete and real tool execution. Keep deterministic Android commands available without a provider. Follow ARCHITECTURE.md for later release boundaries.

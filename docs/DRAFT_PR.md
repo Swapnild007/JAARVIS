@@ -1,30 +1,11 @@
-# Native JAARVIS command center with local Android commands
+# JAARVIS Release 1 · native command center recovery and hardening
 
-JAARVIS was empty. This change adds a native Kotlin/Compose Android application whose animated central reactor connects eight working module routes. Local commands read the real device clock/date/battery and hand off Settings, installed YouTube and alarm requests to supported Android APIs. Voice adapters use on-demand SpeechRecognizer and TextToSpeech; failures remain recoverable through typed input.
+The repository was empty, while an earlier review ZIP held the Android source. This change preserves that source as a baseline and hardens the native app through a single consolidated draft PR. The PR targets `codex/recovered-baseline`; no main branch is created or overwritten.
 
-## Implementation
+- Eight real module routes with luminous reactor, concentric/orbital motion, actual execution states, reduced-motion support and large-text navigation fallback.
+- One bounded local command plan with cancellable dispatch, generation-token rejection of obsolete audio callbacks, honest VERIFIED/HANDOFF/FAILED outcomes and the latest 30 commands persisted locally.
+- Android on-demand speech recognition, on-device preference where installed, TTS, timeout recovery and visible microphone/privacy controls.
+- Real device readings; Settings/YouTube/Camera/Maps/Clock/Calculator launches; encoded Maps queries; Clock review for alarms and timers. External task completion is not fabricated.
+- API 35 emulator CI, APK/report upload, unit/parser/state tests and Android tests for intents, navigation, persistence and error recovery.
 
-- Compose Canvas reactor, bounded orbital drawing, real event-driven operation states, lifecycle/reduced-motion controls.
-- Eight modules: local command history, device actions, external browser search, persistent note, engineering help, decimal budget calculator, real device information/preferences, Clock alarm handoff.
-- Typed input, runtime microphone request, cancellation, speech-service availability/errors, TTS utterance callbacks.
-- Saved sound/motion/theme preferences, local note storage, safe drawing insets, keyboard-aware command input, touch and TalkBack labels.
-- Core interfaces for commands, speech, actions and reminder scheduling; no backend or paid API dependency.
-- Debug-APK artifact workflow and API 35 instrumentation job. Reference inspection and third-party attribution documented.
-
-## Verification
-
-See [VERIFICATION.md](VERIFICATION.md) for exact final commands, outcomes and runtime limitations. Five unit tests cover command routing and state transitions. Screenshots are included only if captured from an actual running app; no generated mockup is presented as app evidence.
-
-## Install
-
-Use the successful Android verification workflow's `jaarvis-debug-and-reports` artifact, extract `app-debug.apk` and install on Android 8+. Or run `adb install -r app/build/outputs/apk/debug/app-debug.apk`.
-
-## Limitations
-
-No physical-phone verification. Speech availability depends on installed Android recognition/TTS providers and voice data. Clock opens for user review: JAARVIS does not claim the alarm was saved. No cloud AI, call-style reminders, continuous wake word, screen-off listening, JAARVIS-owned scheduled notifications, video calling or arbitrary app-screen automation.
-
-## Next session
-
-Physical OPPO voice, permission, keyboard, gesture, rotation, font-size and performance checks; API 35 instrumentation; persistent notification reminders with Android restrictions handled explicitly. See [NEXT_SESSION.md](NEXT_SESSION.md).
-
-Do not merge or deploy. If main is absent, publishing the seed README to establish a PR base requires approval; the application code stays on `feat/jaarvis-command-center`.
+Current evidence is maintained in VERIFICATION.md. Physical voice, OEM apps, actual Clock delivery, TalkBack and power profiling remain hardware acceptance gates. Cloud AI, wake word, autonomous AccessibilityService control and JAARVIS-owned reminders are later releases.

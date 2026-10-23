@@ -1,45 +1,61 @@
-# Verification evidence · 23 October 2026
+# Release 1 verification · 23 October 2026
 
-## Environment
+Verdict: buildable review candidate; physical-device acceptance remains open. Current application code is commit `bf1afb0c64f98ec03ba07d694e3355adb161e498` on `codex/release-1-command-center`, in draft PR #1. Documentation/evidence changes do not add application functionality.
 
-Java 17, Gradle 8.9, AGP 8.7.3, Kotlin 2.0.21, Android SDK 35 / build-tools 35.0.0. No physical Android device and no `/dev/kvm` hardware acceleration. AOSP API 29 x86_64 software emulator was installed for an attempted runtime check. API 35 instrumentation is configured separately in CI.
+## Local execution
 
-## Build and unit checks
+Java 17, Gradle 8.9, AGP 8.7.3, Kotlin 2.0.21, Android SDK 35 and explicitly pinned build-tools 35.0.0. SDK/dependencies were restored after recovering the review archive. No local physical phone or KVM device is available.
+
+Executed:
 
 ```sh
-./gradlew --no-daemon assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
+gradle --no-daemon assembleDebug testDebugUnitTest lintDebug assembleDebugAndroidTest
 ```
 
-The first complete check found one lint error: an API 27 navigation-bar style attribute with minimum SDK 26. Removed the attribute; edge-to-edge system bar appearance is handled through Activity APIs. Added explicit backup/data-transfer exclusions for Android 12+ and disabled legacy backups.
+The Gradle 8.9 distribution is the same version and checksum as the committed wrapper. The current environment needed its managed network proxy to download dependencies; no proxy or environment-specific trust settings were added to the repository.
 
-Final local wrapper command completed successfully in 1m 58s: 76 tasks, 42 executed and 34 up to date. Five unit tests passed (zero failures/errors/skips). Final lint report: **No issues found**. The application and instrumentation APKs were generated. The reports persisted with the workspace and were read again after the session resumed.
+| Check | Result |
+| --- | --- |
+| Final APK and instrumentation APK compilation | Passed; 76 tasks, 15 executed, 61 up to date, 54 seconds |
+| Unit tests | 9 passed; zero failures, errors or skips |
+| Lint | Zero errors; two GradleDependency notices for newer lifecycle libraries |
+| APK signature | `apksigner verify` passed; standard debug certificate |
+| Manifest permissions | RECORD_AUDIO, SET_ALARM and AndroidX-generated signature receiver permission; no INTERNET/AccessibilityService/background mic |
+| Source secret-pattern check | No matching API-key/private-key patterns in app or workflow source; not an exhaustive secret audit |
+| Whitespace validation | `git diff --check` passed |
+| Runtime dependency report | Saved in verification/dependencies.txt; inventory, not a vulnerability-scan verdict |
 
-The resumed execution environment had been reset: `/tmp` toolchains, logs and emulator processes no longer existed. The unfinished software-emulator run therefore provides no successful runtime evidence. CI is used for subsequent runtime verification and real app screenshots. Additional screenshot-capture instrumentation added after resumption must pass CI before being described as verified.
+The first complete build passed with no lint findings; a later metadata-aware run reported two dependency-update notices. They are preserved in `verification/lint.txt`. This is not a claim of an exhaustive dependency/security audit. A transient Kotlin compiler-daemon startup retry recovered and the build completed successfully.
 
-Unit coverage: all six device-command routes; 24-hour and AM/PM alarms including noon/midnight; invalid times; arbitrary text not interpreted as actions; operation state transitions; cancel/reset and late-event rejection.
+Unit coverage: allowlisted app routes; bounded alarm/timer parsing and overflow handling; rejection of arbitrary prose; Maps destination handling; all eight reactor states and late-event rejection; explicit one-step plan/outcome semantics.
 
-Debug APK: `app/build/outputs/apk/debug/app-debug.apk`. APK signature verification through `apksigner verify` passed. No private signing key is tracked; Android generated its normal local debug key outside this repository.
+## GitHub Actions and emulator
 
-## Runtime evidence
+Draft PR: https://github.com/Swapnild007/JAARVIS/pull/1
+Current code run: https://github.com/Swapnild007/JAARVIS/actions/runs/39918527214
 
-No successful runtime result was retained. Source-code existence is not runtime proof. The first SwiftShader software-rendering attempt booted and installed the app, but screenshot capture stalled after its PNG header and is not presented as a successful screenshot. A second software-only emulator attempt was interrupted by the environment reset before its result could be collected.
+The first CI setup failed because setup-android requested the removed `tools` package. Fixed by naming the actual platform/build-tools packages.
 
-The instrumentation APK includes tests for all eight module controls and Back navigation, typed battery command, persistent-note controls, reduced-motion settings, and recoverable unknown commands. Compiling these tests does not establish that they passed at runtime.
+An earlier API 35 x86_64 emulator run executed eight UI tests: seven passed and one exposed a real defect (the note keyboard hid the module Back control). Fixed by retaining the header on module screens while the keyboard is visible. Its original failure report was inspected; it is not counted as a passing run.
 
-## Physical-device release gates
+The build job passed. All 12 emulator tests passed (eight UI tests and four native-boundary tests), with zero failures/skips. The overall job still failed during screenshot collection because Gradle uninstalled the app after testing, removing its external files. The CI command now retains test APKs after the run, following the AndroidX project's own Gradle setting. A new run must verify collection; screenshot inspection remains pending until those images are actually retrieved.
 
-Not verified on a real phone: microphone grant/deny with an installed recognizer; recognition and speech audio; TTS language/voice installation; YouTube launch when present; Clock app saved-alarm delivery; TalkBack; OEM keyboard; cutouts and gesture navigation; rotation and large font; frame-time and background power.
+Actual HTML runtime reports from the 12-test run are preserved under verification/emulator/. They establish API 35 emulator behavior for the current app code, not physical phone or audio behavior. Documentation-only commits are excluded from re-running identical application tests.
 
-No call-like reminders, screen-off microphone, continuous wake word or two-way voice reminder are implemented. Clock handoff is not confirmation of a saved alarm.
+## Artifact identity
 
-## Repository and PR gate
+Delivered local debug APK: version `0.2.0-r1`, versionCode 2, package `com.jaarvis.commandcenter`, minSdk 26, targetSdk 35.
 
-Initial remote repository had no commits or branches. The local seed README commit is `5338939`. Automatic approval review rejected publishing that seed to main because direct default-branch initialization was not specifically authorized. No workaround is used. The requested feature branch holds all application work locally. Publishing that branch failed after resumption because the Git transport had no authentication (`could not read Username`). The connected GitHub API confirms that the remote still has no refs (409: Git Repository is empty). No feature branch or CI run has been published. A draft PR into main requires a real main ref and may remain blocked until initialization is approved. Do not merge or deploy.
+SHA-256: `33ed7900291fb33c5f2b1924f52dafd41152f03916cc2f7fc65d8c94b217795e`.
 
-## Delivery verdict
+The old review APK and current APK use different debug signing certificates. The original private key was absent from the archive. Android may require uninstalling the old build; save notes first because uninstall clears local data. CI-generated debug APKs can also use a different certificate. No production signing key or credentials are committed.
 
-**Buildable review candidate; release acceptance incomplete.** The app builds, all five unit tests pass, lint is clean, and the debug APK was signature-verified. Rendering, animation, eight-module navigation, platform actions, permissions and actual speech/TTS have not been established by a completed runtime test. No screenshot is claimed. API 35 UI tests and real-phone checks remain required.
+## Remaining acceptance gates
 
-The review ZIP contains the actual debug APK, source archive and the saved unit/lint reports. Its source includes the CI screenshot-capture test added after the last local compilation; that additional test remains uncompiled until CI or the Android toolchain is restored. The application Kotlin source in the APK is unchanged from the successful local wrapper build.
+Not verified on physical hardware: actual recognition/TTS audio and interruption; OS microphone-denial dialog; offline recognition/language availability; OEM app launches; saved Clock alarm/timer delivery; TalkBack; large font and orientation; frame timing and background power. See DEVICE_ACCEPTANCE.md.
 
-To unblock GitHub delivery, approve creating `main` with the seed README only. Then the connected GitHub tools can publish the feature implementation and create the draft PR. This does not merge or deploy the application.
+The emulator's simulated voice-denial recovery test exercises the application's error path, not an actual operating-system permission dialog. Intent tests validate visible-review flags, URI encoding and honest unavailable-app results using a recording Context, not actual third-party app behavior.
+
+General AI, API providers, autonomous tool orchestration, durable approved personal memory, wake word, background voice, incoming-call-style reminders, owned notification scheduling and remote engineering remain later releases. No overall project completion, merge or public deployment is claimed.
+
+Original recovered reports remain under `verification/archive/` and do not verify this version.
