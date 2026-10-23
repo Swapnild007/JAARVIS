@@ -154,7 +154,7 @@ private fun CommandDock(model: CommandCenterModel, listen: () -> Unit, imeVisibl
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(value = command, onValueChange = { command = it.take(500) }, label = { Text("Enter a local command", fontSize = 11.sp) },
+            OutlinedTextField(value = command, onValueChange = { command = it.take(500) }, label = { Text("Ask JAARVIS or enter a command", fontSize = 11.sp) },
                 modifier = Modifier.weight(1f), singleLine = true, shape = RoundedCornerShape(18.dp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send), keyboardActions = KeyboardActions(onSend = { submit() }))
             Button(onClick = { submit() }, enabled = command.isNotBlank(), shape = RoundedCornerShape(18.dp), contentPadding = PaddingValues(12.dp),
@@ -172,7 +172,7 @@ private fun ModuleScreen(module: Module, model: CommandCenterModel) {
     Spacer(Modifier.height(24.dp))
     when (module) {
         Module.INTELLIGENCE -> {
-            Info("Local intelligence", "One bounded local core handles device readings, app launches, Maps and Clock handoffs. General AI is not connected. These are local rules, not an autonomous AI planner.")
+            Info("JAARVIS intelligence", if (model.aiConfigured) "Gemini conversation configured. Device commands remain local; other requests are sent to your selected Gemini model." else "Configure Gemini in SYSTEM to enable open-ended conversation. Local commands work without a key.")
             Action("Ask for the current date") { model.submit("date") }
             Info("Command history", "The latest 30 commands stay on this device. VERIFIED means a device reading returned; HANDOFF means Android accepted an intent, not that the other app completed a task.")
             if (model.history.isEmpty()) Text("No saved commands.", color = Muted)
@@ -259,6 +259,30 @@ private fun SystemPreferences(model: CommandCenterModel) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         listOf("Midnight", "Deep blue").forEach { theme -> FilterChip(selected = p.theme == theme,
             onClick = { model.updatePreferences(p.copy(theme = theme)) }, label = { Text(theme) }) }
+    }
+    Info("AI provider", "Gemini is optional. Your prompts are sent to Google only for open-ended requests when a key is configured. Local device commands remain offline. API keys are encrypted with Android Keystore.")
+    var keyEntry by remember { mutableStateOf("") }
+    OutlinedTextField(value = keyEntry, onValueChange = { keyEntry = it.take(4096) }, label = { Text("Gemini API key") }, singleLine = true, visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+    Action(if (model.aiConfigured) "Replace saved API key" else "Save API key securely", enabled = keyEntry.isNotBlank()) { if (model.saveAiKey(keyEntry)) keyEntry = "" }
+    if (model.aiConfigured) Action("Remove API key") { model.clearAiKey() }
+    var modelEntry by remember(model.aiModel) { mutableStateOf(model.aiModel) }
+    OutlinedTextField(value = modelEntry, onValueChange = { modelEntry = it.take(100) }, label = { Text("Gemini model") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+    Action("Save model", enabled = modelEntry.isNotBlank()) { model.setAiModel(modelEntry) }
+    Info("JAARVIS voice", "Select and preview an installed offline Android voice. A lower pitch does not guarantee a masculine timbre. Additional voice models may be required.")
+    val voices = model.availableVoices
+    if (voices.isEmpty()) Text("No installed offline TTS voices found. Check Android speech settings.", color = Muted)
+    else {
+        var expanded by remember { mutableStateOf(false) }
+        Box { OutlinedButton(onClick = { expanded = true }) { Text(model.selectedVoice.ifBlank { "Choose a voice" }.take(45)) }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                voices.forEach { voice -> DropdownMenuItem(text = { Text(voice.take(50)) }, onClick = { model.selectVoice(voice); expanded = false }) }
+            }
+        }
+        Action("Preview selected voice") { model.previewVoice() }
+        Text("Voice rate", color = Cyan)
+        Slider(value = model.voiceRate, onValueChange = { model.updateVoice(it, model.voicePitch) }, valueRange = .6f..1.4f)
+        Text("Voice pitch", color = Cyan)
+        Slider(value = model.voicePitch, onValueChange = { model.updateVoice(model.voiceRate, it) }, valueRange = .6f..1.3f)
     }
     Info("Voice privacy", "Microphone is requested only when you activate voice. On Android 12+, on-device recognition is preferred when installed. Otherwise the Android speech service may use its network. Listening stops after 20 seconds without a result. Nothing listens continuously. TTS uses your installed engine and voice data.")
     Action("Open Android app permissions") {
